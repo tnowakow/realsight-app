@@ -2,11 +2,10 @@ import { useState, useEffect } from 'react';
 import { useRealSightStore } from './store/useRealSightStore';
 import { PortfolioPropertySelector } from './components/PortfolioPropertySelector';
 import { TenantFinancialsTable } from './components/TenantFinancialsTable';
-import { RealEstateKPICards } from './components/RealEstateKPICards';
 import { OverviewTab } from './components/tabs/OverviewTab';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'tenant-financials'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'tenant-financials' | 'portfolio-performance' | 'acquisition'>('overview');
   const fetchPortfolios = useRealSightStore((state) => state.fetchPortfolios);
 
   useEffect(() => {
@@ -22,6 +21,9 @@ function App() {
             <div className="flex items-center gap-4">
               <h1 className="text-xl font-bold text-emerald-400">RealSight</h1>
               <PortfolioPropertySelector />
+            </div>
+            <div className="text-xs text-slate-500">
+              Data current as of {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </div>
           </div>
           
@@ -47,19 +49,56 @@ function App() {
             >
               Tenant Financials
             </button>
+            <button
+              onClick={() => setActiveTab('portfolio-performance')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === 'portfolio-performance' 
+                  ? 'text-emerald-400 border-b-2 border-emerald-400' 
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Portfolio Performance
+            </button>
+            <button
+              onClick={() => setActiveTab('acquisition')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === 'acquisition' 
+                  ? 'text-emerald-400 border-b-2 border-emerald-400' 
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Acquisition Targets
+            </button>
           </nav>
         </div>
       </header>
       
       {/* Main Content */}
       <main className="max-w-7xl mx-auto p-6">
-        {activeTab === 'overview' ? (
-          <>
-            <RealEstateKPICards />
-            <OverviewTab />
-          </>
-        ) : (
+        {activeTab === 'overview' && (
+          <OverviewTab />
+        )}
+        
+        {activeTab === 'tenant-financials' && (
           <TenantFinancialsTable />
+        )}
+        
+        {activeTab === 'portfolio-performance' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-white mb-4">Portfolio Performance</h2>
+            <div className="bg-slate-900/50 rounded-lg p-8 border border-slate-800 text-center">
+              <p className="text-slate-400">Portfolio performance analytics coming soon...</p>
+            </div>
+          </div>
+        )}
+        
+        {activeTab === 'acquisition' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-white mb-4">Acquisition Targets</h2>
+            <div className="bg-slate-900/50 rounded-lg p-8 border border-slate-800 text-center">
+              <p className="text-slate-400">Acquisition target identification coming soon...</p>
+            </div>
+          </div>
         )}
       </main>
     </div>
