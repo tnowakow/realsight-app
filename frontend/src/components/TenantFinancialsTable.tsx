@@ -37,42 +37,25 @@ export const TenantFinancialsTable: React.FC<TenantFinancialsTableProps> = ({ se
   const tenantFinancials = mockTenants.map(tenant => {
     const latestPayment = mockPayments.find(p => p.tenant_id === tenant.id);
     if (!latestPayment) {
-      return {
-        ...tenant,
-        monthlyRent: 0,
-        amountPaid: 0,
-        amountOwed: 0,
-        paymentStatus: 'paid',
-        daysPastDue: 0,
-      };
+      return { ...tenant, monthlyRent: 0, amountPaid: 0, amountOwed: 0, paymentStatus: 'paid', daysPastDue: 0 };
     }
-    return {
-      ...tenant,
-      monthlyRent: latestPayment.amount_due,
-      amountPaid: latestPayment.amount_paid,
-      amountOwed: latestPayment.amount_due - latestPayment.amount_paid,
-      paymentStatus: latestPayment.payment_status,
-      daysPastDue: latestPayment.days_past_due,
-    };
+    return { ...tenant, monthlyRent: latestPayment.amount_due, amountPaid: latestPayment.amount_paid, amountOwed: latestPayment.amount_due - latestPayment.amount_paid, paymentStatus: latestPayment.payment_status, daysPastDue: latestPayment.days_past_due };
   });
 
-  const filteredTenants = selectedPropertyId 
-    ? tenantFinancials.filter(t => t.property_id === selectedPropertyId)
-    : tenantFinancials;
+  const filteredTenants = selectedPropertyId ? tenantFinancials.filter(t => t.property_id === selectedPropertyId) : tenantFinancials;
 
   const sortedTenants = [...filteredTenants].sort((a, b) => {
     const key = sortConfig.key as keyof typeof a;
     const direction = sortConfig.direction === 'asc' ? 1 : -1;
-    if (a[key] < b[key]) return -1 * direction;
-    if (a[key] > b[key]) return 1 * direction;
+    const aValue = a[key] as any;
+    const bValue = b[key] as any;
+    if (aValue < bValue) return -1 * direction;
+    if (aValue > bValue) return 1 * direction;
     return 0;
   });
 
   const handleSort = (key: string) => {
-    setSortConfig(prev => ({
-      key,
-      direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc',
-    }));
+    setSortConfig(prev => ({ key, direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc' }));
   };
 
   const getStatusBadge = (status: string) => {
@@ -106,15 +89,12 @@ export const TenantFinancialsTable: React.FC<TenantFinancialsTableProps> = ({ se
 
   return (
     <div className="space-y-4">
-      {/* Summary Header */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-slate-900 p-4 rounded-xl border border-slate-800"><p className="text-xs text-slate-500 font-medium uppercase tracking-tighter">Total Tenants</p><p className="text-2xl font-bold text-white mt-1">{tenantFinancials.length}</p></div>
         <div className="bg-slate-900 p-4 rounded-xl border border-slate-800"><p className="text-xs text-slate-500 font-medium uppercase tracking-tighter">Monthly Rent Due</p><p className="text-2xl font-bold text-white mt-1">${totalRentDue.toLocaleString()}</p></div>
         <div className={`bg-slate-900 p-4 rounded-xl border ${collectionRate >= 90 ? 'border-emerald-500/30' : collectionRate >= 70 ? 'border-amber-500/30' : 'border-red-500/30'}`}><p className="text-xs text-slate-500 font-medium uppercase tracking-tighter">Collection Rate</p><p className={`text-2xl font-bold mt-1 ${collectionRate >= 90 ? 'text-emerald-400' : collectionRate >= 70 ? 'text-amber-400' : 'text-red-400'}`}>{collectionRate.toFixed(1)}%</p></div>
         <div className="bg-slate-900 p-4 rounded-xl border border-slate-800"><p className="text-xs text-slate-500 font-medium uppercase tracking-tighter">Problem Tenants</p><p className={`text-2xl font-bold mt-1 ${problemTenants === 0 ? 'text-emerald-400' : problemTenants <= 2 ? 'text-amber-400' : 'text-red-400'}`}>{problemTenants}</p></div>
       </div>
-
-      {/* Data Table */}
       <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
