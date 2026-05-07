@@ -1,353 +1,200 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-async function main() {
-  console.log('🌱 Starting RealSight seed...');
+// --- Helper Functions ---
+const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const getRandomDate = (start, end) => new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+const hashString = (str) => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return `hash_${Math.abs(hash)}`;
+};
 
-  // Clean up existing data (RealSight tables)
+
+// --- Data for Procedural Generation ---
+const portfolioNames = [
+  { name: 'Midwest Commercial Properties LLC', owner: 'Tom Nowakowski', city: 'Detroit', state: 'MI' },
+  { name: 'Great Lakes Retail Holdings', owner: 'Chuck Smith', city: 'Chicago', state: 'IL' },
+  { name: 'Sunbelt Logistics & Industrial', owner: 'Maria Garcia', city: 'Atlanta', state: 'GA' },
+  { name: 'West Coast Tech Partners', owner: 'David Chen', city: 'San Jose', state: 'CA' },
+  { name: 'Keystone Medical REIT', owner: 'Dr. Emily White', city: 'Philadelphia', state: 'PA' }
+];
+
+const propertyData = {
+  Office: { names: ['Metro Tower', 'Innovation Hub', 'City Center Plaza', 'Corporate Commons', 'The Apex Building'], sqft: [25000, 80000], units: [10, 50] },
+  Retail: { names: ['Riverwalk Shops', 'The Crossroads', 'Heritage Square', 'Parkside Pavilion', 'Market Street Center'], sqft: [15000, 50000], units: [5, 30] },
+  Industrial: { names: ['Keystone Logistics', 'Titan Warehouse', 'Gateway Distribution', 'Northpoint Industrial', 'Railhead Complex'], sqft: [50000, 200000], units: [1, 10] },
+  Healthcare: { names: ['Wellness Medical Campus', 'Orchard Health Center', 'City General Clinic', 'Lakeview Surgical', 'Preserve Medical'], sqft: [20000, 60000], units: [8, 40] }
+};
+
+const tenantData = {
+  Office: ['Innovate Inc.', 'Global Synergy', 'Quantum Analytics', 'Apex Financial', 'BrightPath'],
+  Retail: ['Urban Trends', 'Fresh Market', 'The Daily Grind', 'Artisan Corner', 'Style & Co.'],
+  Industrial: ['LogiCore', 'SupplyChain Solutions', 'ProHaul', 'Prime Distribution', 'BulkGoods Inc.'],
+  Healthcare: ['City General Dentistry', 'OrthoCare Specialists', 'Family Wellness Clinic', 'VisionFirst']
+};
+
+const citiesByState = {
+  MI: ['Southfield', 'Troy', 'Ann Arbor', 'Grand Rapids'],
+  IL: ['Naperville', 'Rosemont', 'Schaumburg', 'Oak Brook'],
+  GA: ['Marietta', 'Alpharetta', 'Sandy Springs', 'Decatur'],
+  CA: ['Santa Clara', 'Sunnyvale', 'Cupertino', 'Palo Alto'],
+  PA: ['King of Prussia', 'Bala Cynwyd', 'Wayne', 'Exton']
+};
+
+async function main() {
+  console.log('🌱 Starting large-scale RealSight seed...');
+
+  // Clean up existing data
   await prisma.payment.deleteMany();
   await prisma.lease.deleteMany();
   await prisma.tenant.deleteMany();
   await prisma.property.deleteMany();
   await prisma.metric.deleteMany();
   await prisma.portfolio.deleteMany();
+  console.log('🧹 Database cleaned.');
 
-  // Create Portfolio
-  const portfolio = await prisma.portfolio.create({
-    data: {
-      name: 'Midwest Commercial Properties LLC',
-      portfolio_hash: 'a6b4c8d2e0f1g3h5i7j9k1l3m5n7o9p1q3r5s7t9u1v3w5x7y9z1a3b5c7d9e1f3',
-      owner_name: 'Tom Nowakowski',
-      headquarters_city: 'Detroit',
-      headquarters_state: 'MI',
-      subscription_tier: 'Enterprise'
-    }
-  });
-  console.log('✅ Created portfolio:', portfolio.name);
-
-  // Create Properties (4 properties for demo)
-  const properties = [];
-  
-  const prop1 = await prisma.property.create({
-    data: {
-      portfolio_id: portfolio.id,
-      name: 'Detroit Tech Center',
-      city: 'Detroit',
-      state: 'MI',
-      zip_code: '48201',
-      property_type: 'Office',
-      total_square_feet: 45000,
-      unit_count: 12
-    }
-  });
-  properties.push(prop1);
-
-  const prop2 = await prisma.property.create({
-    data: {
-      portfolio_id: portfolio.id,
-      name: 'Riverfront Retail Plaza',
-      city: 'Detroit',
-      state: 'MI',
-      zip_code: '48226',
-      property_type: 'Retail',
-      total_square_feet: 32000,
-      unit_count: 8
-    }
-  });
-  properties.push(prop2);
-
-  const prop3 = await prisma.property.create({
-    data: {
-      portfolio_id: portfolio.id,
-      name: 'Ann Arbor Medical Office',
-      city: 'Ann Arbor',
-      state: 'MI',
-      zip_code: '48104',
-      property_type: 'Office',
-      total_square_feet: 28000,
-      unit_count: 7
-    }
-  });
-  properties.push(prop3);
-
-  const prop4 = await prisma.property.create({
-    data: {
-      portfolio_id: portfolio.id,
-      name: 'Grand Rapids Warehouse',
-      city: 'Grand Rapids',
-      state: 'MI',
-      zip_code: '49503',
-      property_type: 'Industrial',
-      total_square_feet: 65000,
-      unit_count: 5
-    }
-  });
-  properties.push(prop4);
-
-  console.log('✅ Created', properties.length, 'properties');
-
-  // Create Tenants with Leases and Payments
-  const tenants = [];
-
-  // Detroit Tech Center - Good Tenant
-  const tenant1 = await prisma.tenant.create({
-    data: {
-      property_id: prop1.id,
-      business_name: 'TechStart Solutions',
-      tenant_hash: 'techstart-001',
-      business_type: 'Technology',
-      contact_email: 'admin@techstart.com',
-      credit_rating: 'A'
-    }
-  });
-  await prisma.lease.create({
-    data: {
-      tenant_id: tenant1.id,
-      property_id: prop1.id,
-      lease_start_date: new Date('2024-01-01'),
-      lease_end_date: new Date('2029-12-31'),
-      monthly_rent: 8500
-    }
-  });
-  await prisma.payment.create({
-    data: {
-      time: new Date('2026-05-07'),
-      property_id: prop1.id,
-      tenant_id: tenant1.id,
-      amount_due: 8500,
-      amount_paid: 8500,
-      payment_status: 'paid',
-      days_past_due: 0
-    }
-  });
-  tenants.push(tenant1);
-
-  // Detroit Tech Center - Problem Tenant (Late Payments)
-  const tenant2 = await prisma.tenant.create({
-    data: {
-      property_id: prop1.id,
-      business_name: 'DataFlow Analytics',
-      tenant_hash: 'dataflow-002',
-      business_type: 'Technology',
-      contact_email: 'billing@dataflow.io',
-      credit_rating: 'B+'
-    }
-  });
-  await prisma.lease.create({
-    data: {
-      tenant_id: tenant2.id,
-      property_id: prop1.id,
-      lease_start_date: new Date('2023-06-01'),
-      lease_end_date: new Date('2028-05-31'),
-      monthly_rent: 12000
-    }
-  });
-  await prisma.payment.create({
-    data: {
-      time: new Date('2026-05-07'),
-      property_id: prop1.id,
-      tenant_id: tenant2.id,
-      amount_due: 12000,
-      amount_paid: 6000,
-      payment_status: 'partial',
-      days_past_due: 28
-    }
-  });
-  tenants.push(tenant2);
-
-  // Detroit Tech Center - Problem Tenant (Delinquent)
-  const tenant3 = await prisma.tenant.create({
-    data: {
-      property_id: prop1.id,
-      business_name: 'Metro Financial Group',
-      tenant_hash: 'metrofin-004',
-      business_type: 'Financial Services',
-      contact_email: 'leasing@metrofin.com',
-      credit_rating: 'A+'
-    }
-  });
-  await prisma.lease.create({
-    data: {
-      tenant_id: tenant3.id,
-      property_id: prop1.id,
-      lease_start_date: new Date('2022-09-01'),
-      lease_end_date: new Date('2032-08-31'),
-      monthly_rent: 15000
-    }
-  });
-  await prisma.payment.create({
-    data: {
-      time: new Date('2026-05-07'),
-      property_id: prop1.id,
-      tenant_id: tenant3.id,
-      amount_due: 15000,
-      amount_paid: 0,
-      payment_status: 'delinquent',
-      days_past_due: 42
-    }
-  });
-  tenants.push(tenant3);
-
-  // Riverfront Retail Plaza - Good Tenant
-  const tenant4 = await prisma.tenant.create({
-    data: {
-      property_id: prop2.id,
-      business_name: 'Gourmet Market Fresh',
-      tenant_hash: 'gourmet-006',
-      business_type: 'Retail - Grocery',
-      contact_email: 'corporate@gourmetmarket.com',
-      credit_rating: 'A'
-    }
-  });
-  await prisma.lease.create({
-    data: {
-      tenant_id: tenant4.id,
-      property_id: prop2.id,
-      lease_start_date: new Date('2023-01-01'),
-      lease_end_date: new Date('2033-12-31'),
-      monthly_rent: 18000
-    }
-  });
-  await prisma.payment.create({
-    data: {
-      time: new Date('2026-05-07'),
-      property_id: prop2.id,
-      tenant_id: tenant4.id,
-      amount_due: 18000,
-      amount_paid: 18000,
-      payment_status: 'paid',
-      days_past_due: 0
-    }
-  });
-  tenants.push(tenant4);
-
-  // Riverfront Retail Plaza - Problem Tenant (Defaulted)
-  const tenant5 = await prisma.tenant.create({
-    data: {
-      property_id: prop2.id,
-      business_name: 'Style & Co Boutique',
-      tenant_hash: 'styleco-007',
-      business_type: 'Retail - Fashion',
-      contact_email: 'owner@styleandco.com',
-      credit_rating: 'C+'
-    }
-  });
-  await prisma.lease.create({
-    data: {
-      tenant_id: tenant5.id,
-      property_id: prop2.id,
-      lease_start_date: new Date('2025-01-01'),
-      lease_end_date: new Date('2030-12-31'),
-      monthly_rent: 4200
-    }
-  });
-  await prisma.payment.create({
-    data: {
-      time: new Date('2026-05-07'),
-      property_id: prop2.id,
-      tenant_id: tenant5.id,
-      amount_due: 4200,
-      amount_paid: 1000,
-      payment_status: 'defaulted',
-      days_past_due: 67
-    }
-  });
-  tenants.push(tenant5);
-
-  // Ann Arbor Medical Office - Good Tenants
-  const tenant6 = await prisma.tenant.create({
-    data: {
-      property_id: prop3.id,
-      business_name: 'Ann Arbor Dental Associates',
-      tenant_hash: 'aadental-008',
-      business_type: 'Healthcare - Dental',
-      contact_email: 'admin@aadental.com',
-      credit_rating: 'A'
-    }
-  });
-  await prisma.lease.create({
-    data: {
-      tenant_id: tenant6.id,
-      property_id: prop3.id,
-      lease_start_date: new Date('2021-04-01'),
-      lease_end_date: new Date('2031-03-31'),
-      monthly_rent: 11000
-    }
-  });
-  await prisma.payment.create({
-    data: {
-      time: new Date('2026-05-07'),
-      property_id: prop3.id,
-      tenant_id: tenant6.id,
-      amount_due: 11000,
-      amount_paid: 11000,
-      payment_status: 'paid',
-      days_past_due: 0
-    }
-  });
-  tenants.push(tenant6);
-
-  // Grand Rapids Warehouse - Good Tenant
-  const tenant7 = await prisma.tenant.create({
-    data: {
-      property_id: prop4.id,
-      business_name: 'Midwest Distribution Co',
-      tenant_hash: 'midwestdist-010',
-      business_type: 'Logistics',
-      contact_email: 'leasing@midwestdist.com',
-      credit_rating: 'A-'
-    }
-  });
-  await prisma.lease.create({
-    data: {
-      tenant_id: tenant7.id,
-      property_id: prop4.id,
-      lease_start_date: new Date('2023-03-01'),
-      lease_end_date: new Date('2033-02-28'),
-      monthly_rent: 28000
-    }
-  });
-  await prisma.payment.create({
-    data: {
-      time: new Date('2026-05-07'),
-      property_id: prop4.id,
-      tenant_id: tenant7.id,
-      amount_due: 28000,
-      amount_paid: 28000,
-      payment_status: 'paid',
-      days_past_due: 0
-    }
-  });
-  tenants.push(tenant7);
-
-  console.log('✅ Created', tenants.length, 'tenants with leases and payments');
-
-  // Create Metrics for Portfolio Dashboard
-  const metrics = [
-    { metric_name: 'rent_collection_rate', metric_value: 92.3, unit: '%' },
-    { metric_name: 'occupancy_rate', metric_value: 87.5, unit: '%' },
-    { metric_name: 'outstanding_debt', metric_value: 19200, unit: '$' },
-    { metric_name: 'avg_days_past_due', metric_value: 34, unit: 'days' },
-    { metric_name: 'monthly_revenue', metric_value: 86700, unit: '$' },
-    { metric_name: 'problem_tenants_count', metric_value: 3, unit: 'count' },
-    { metric_name: 'active_alerts', metric_value: 4, unit: 'count' },
-    { metric_name: 'noi_margin', metric_value: 6.8, unit: '%' }
-  ];
-
-  for (const m of metrics) {
-    await prisma.metric.create({
+  for (const p of portfolioNames) {
+    const portfolio = await prisma.portfolio.create({
       data: {
-        portfolio_id: portfolio.id,
-        metric_date: new Date('2026-05-07'),
-        metric_name: m.metric_name,
-        metric_value: m.metric_value,
-        unit: m.unit
+        name: p.name,
+        portfolio_hash: hashString(p.name),
+        owner_name: p.owner,
+        headquarters_city: p.city,
+        headquarters_state: p.state,
+        subscription_tier: 'Enterprise'
       }
     });
-  }
 
-  console.log('✅ Created', metrics.length, 'portfolio metrics');
-  console.log('🎉 RealSight seeding complete!');
+    console.log(`\n🏢 Created portfolio: ${portfolio.name}`);
+
+    let allProperties = [];
+    let allTenants = [];
+    let allPayments = [];
+
+    const numProperties = getRandomInt(12, 15);
+    for (let i = 0; i < numProperties; i++) {
+      const propertyType = getRandomElement(Object.keys(propertyData));
+      const propTypeData = propertyData[propertyType];
+      
+      const property = await prisma.property.create({
+        data: {
+          portfolio_id: portfolio.id,
+          name: `${getRandomElement(propTypeData.names)} - ${getRandomElement(citiesByState[p.state])}`,
+          city: getRandomElement(citiesByState[p.state]),
+          state: p.state,
+          zip_code: `${getRandomInt(10000, 99999)}`,
+          property_type: propertyType,
+          total_square_feet: getRandomInt(propTypeData.sqft[0], propTypeData.sqft[1]),
+          unit_count: getRandomInt(propTypeData.units[0], propTypeData.units[1])
+        }
+      });
+      allProperties.push(property);
+
+      // Create tenants for this property
+      const occupancyRate = Math.random() * (0.95 - 0.8) + 0.8; // 80-95% occupancy
+      const numTenants = Math.floor(property.unit_count * occupancyRate);
+
+      for (let j = 0; j < numTenants; j++) {
+        const tenantName = `${getRandomElement(tenantData[propertyType])} #${j + 1}`;
+        const tenant = await prisma.tenant.create({
+          data: {
+            property_id: property.id,
+            business_name: tenantName,
+            tenant_hash: hashString(`${property.id}-${tenantName}`),
+            business_type: propertyType,
+            contact_email: `contact@${tenantName.toLowerCase().replace(/\s+/g, '')}.com`,
+            credit_rating: getRandomElement(['A+', 'A', 'A-', 'B+', 'B', 'C+'])
+          }
+        });
+
+        const lease = await prisma.lease.create({
+          data: {
+            tenant_id: tenant.id,
+            property_id: property.id,
+            lease_start_date: getRandomDate(new Date('2020-01-01'), new Date('2025-01-01')),
+            lease_end_date: getRandomDate(new Date('2028-01-01'), new Date('2035-01-01')),
+            monthly_rent: getRandomInt(15, 40) * 1000 // $15k - $40k rent
+          }
+        });
+
+        // Create a payment record for the current month
+        const paymentRoll = Math.random();
+        let payment_status, amount_paid, days_past_due;
+
+        if (paymentRoll > 0.7) { // 70% paid
+          payment_status = 'paid';
+          amount_paid = lease.monthly_rent;
+          days_past_due = 0;
+        } else if (paymentRoll > 0.4) { // 30% partial
+          payment_status = 'partial';
+          amount_paid = lease.monthly_rent * (Math.random() * (0.8 - 0.2) + 0.2); // 20-80% paid
+          days_past_due = getRandomInt(5, 25);
+        } else if (paymentRoll > 0.2) { // 20% delinquent
+          payment_status = 'delinquent';
+          amount_paid = 0;
+          days_past_due = getRandomInt(31, 60);
+        } else { // 10% defaulted
+          payment_status = 'defaulted';
+          amount_paid = lease.monthly_rent * (Math.random() * 0.1); // <10% paid
+          days_past_due = getRandomInt(61, 120);
+        }
+        
+        const payment = await prisma.payment.create({
+          data: {
+            time: new Date(),
+            property_id: property.id,
+            tenant_id: tenant.id,
+            amount_due: lease.monthly_rent,
+            amount_paid: Math.round(amount_paid),
+            payment_status,
+            days_past_due
+          }
+        });
+        allPayments.push({ ...payment, lease });
+        allTenants.push(tenant);
+      }
+    }
+    console.log(`  -> 🏠 Created ${allProperties.length} properties`);
+    console.log(`  -> 👥 Created ${allTenants.length} tenants`);
+
+    // --- Calculate and Create Portfolio Metrics ---
+    const totalRentDue = allPayments.reduce((sum, p) => sum + p.amount_due, 0);
+    const totalRentPaid = allPayments.reduce((sum, p) => sum + p.amount_paid, 0);
+    const problemTenants = allPayments.filter(p => ['partial', 'delinquent', 'defaulted'].includes(p.payment_status));
+    const totalUnits = allProperties.reduce((sum, p) => sum + p.unit_count, 0);
+
+    const metrics = [
+      { metric_name: 'rent_collection_rate', metric_value: totalRentDue > 0 ? (totalRentPaid / totalRentDue) * 100 : 100, unit: '%' },
+      { metric_name: 'occupancy_rate', metric_value: totalUnits > 0 ? (allTenants.length / totalUnits) * 100 : 100, unit: '%' },
+      { metric_name: 'outstanding_debt', metric_value: totalRentDue - totalRentPaid, unit: '$' },
+      { metric_name: 'avg_days_past_due', metric_value: problemTenants.length > 0 ? problemTenants.reduce((sum, p) => sum + p.days_past_due, 0) / problemTenants.length : 0, unit: 'days' },
+      { metric_name: 'monthly_revenue', metric_value: totalRentPaid, unit: '$' },
+      { metric_name: 'problem_tenants_count', metric_value: problemTenants.length, unit: 'count' },
+      { metric_name: 'active_alerts', metric_value: problemTenants.length, unit: 'count' },
+      { metric_name: 'noi_margin', metric_value: getRandomInt(25, 65), unit: '%' }
+    ];
+
+    for (const m of metrics) {
+      await prisma.metric.create({
+        data: {
+          portfolio_id: portfolio.id,
+          metric_date: new Date(),
+          metric_name: m.metric_name,
+          metric_value: parseFloat(m.metric_value.toFixed(2)),
+          unit: m.unit
+        }
+      });
+    }
+    console.log(`  -> 📈 Created ${metrics.length} calculated portfolio metrics`);
+  }
+  
+  console.log('\n🎉 RealSight large-scale seeding complete!');
 }
 
 main()
