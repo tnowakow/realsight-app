@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npx prisma migrate deploy || (sleep 2 && npx prisma migrate deploy) || (sleep 5 && npx prisma migrate deploy) && node index.js",
+    "start": "echo 'Starting deployment...' && (npx prisma migrate deploy && echo 'Migration successful!') || (echo 'Migration failed, retrying in 2s...' && sleep 2 && npx prisma migrate deploy && echo 'Migration successful on retry 1!') || (echo 'Migration failed, retrying in 5s...' && sleep 5 && npx prisma migrate deploy && echo 'Migration successful on retry 2!') && echo 'Starting server...' && node index.js",
     "start:robust": "sleep 5 && npx prisma migrate deploy && node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
