@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ArrowUp, ArrowDown, AlertTriangle, CheckCircle, Clock, DollarSign } from 'lucide-react';
-import { useRealSightStore, type Tenant, type PaymentRecord } from '../store/useRealSightStore';
+import { type Tenant, type PaymentRecord } from '../store/useRealSightStore';
 
 interface TenantFinancialsTableProps {
   selectedPropertyId?: string | null;

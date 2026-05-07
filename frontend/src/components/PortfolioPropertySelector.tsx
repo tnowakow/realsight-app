@@ -17,7 +17,7 @@ export const PortfolioPropertySelector = () => {
   
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [propertyDropdownOpen, setPropertyDropdownOpen] = useState(false);
-  const [isLoadingPortfolios, setIsLoadingPortfolios] = useState(portfolios.length === 0);
+  const [isLoadingPortfolios] = useState(portfolios.length === 0);
 
   // Mock data for initial load (will be replaced by API)
   useEffect(() => {
