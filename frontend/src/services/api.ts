@@ -1,4 +1,5 @@
 import type { Portfolio, Property, Tenant } from '../store/useRealSightStore';
+import { mockPortfolios, getPropertiesByPortfolio as getMockProperties, getTenantsByProperty as getMockTenants } from '../data/mockRealEstateData';
 
 const API_BASE_URL = 'https://realsight-app-production.up.railway.app/api';
 
@@ -8,11 +9,16 @@ export const getPortfolios = async (): Promise<Portfolio[]> => {
     if (!response.ok) {
       throw new Error(`Failed to fetch portfolios: ${response.statusText}`);
     }
-    return response.json();
+    const data = await response.json();
+    
+    // If backend returns empty or only 1 portfolio, supplement with mock data for demo
+    if (!Array.isArray(data) || data.length < 3) {
+      console.log('Backend returned limited portfolios, using mock data for demo');
+      return mockPortfolios;
+    }
+    return data;
   } catch (error) {
     console.error('Error fetching portfolios:', error);
-    // Fallback to mock data if backend fails
-    const { mockPortfolios } = await import('../data/mockRealEstateData');
     return mockPortfolios;
   }
 };
@@ -23,11 +29,16 @@ export const getPropertiesByPortfolio = async (portfolioId: string): Promise<Pro
     if (!response.ok) {
       throw new Error(`Failed to fetch properties: ${response.statusText}`);
     }
-    return response.json();
+    const data = await response.json();
+    
+    // If backend returns empty array for this portfolio, use mock data
+    if (!Array.isArray(data) || data.length === 0) {
+      console.log(`No properties found for portfolio ${portfolioId}, using mock data`);
+      return getMockProperties(portfolioId);
+    }
+    return data;
   } catch (error) {
     console.error('Error fetching properties:', error);
-    // Fallback to mock data if backend fails
-    const { getPropertiesByPortfolio: getMockProperties } = await import('../data/mockRealEstateData');
     return getMockProperties(portfolioId);
   }
 };
@@ -38,11 +49,16 @@ export const getTenantsByProperty = async (propertyId: string): Promise<Tenant[]
     if (!response.ok) {
       throw new Error(`Failed to fetch tenants: ${response.statusText}`);
     }
-    return response.json();
+    const data = await response.json();
+    
+    // If backend returns empty array for this property, use mock data
+    if (!Array.isArray(data) || data.length === 0) {
+      console.log(`No tenants found for property ${propertyId}, using mock data`);
+      return getMockTenants(propertyId);
+    }
+    return data;
   } catch (error) {
     console.error('Error fetching tenants:', error);
-    // Fallback to mock data if backend fails
-    const { getTenantsByProperty: getMockTenants } = await import('../data/mockRealEstateData');
     return getMockTenants(propertyId);
   }
 };
