@@ -1,4 +1,4 @@
-import { Portfolio, Property, Tenant } from '../store/useRealSightStore';
+import type { Portfolio, Property, Tenant } from '../store/useRealSightStore';
 
 const API_BASE_URL = 'https://realsight-app-production.up.railway.app/api';
 

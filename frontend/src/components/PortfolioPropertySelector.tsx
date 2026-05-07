@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, Building2, TrendingUp } from 'lucide-react';
+import { ChevronDown, Building2 } from 'lucide-react';
 import { useRealSightStore } from '../store/useRealSightStore';
 
 export const PortfolioPropertySelector = () => {
