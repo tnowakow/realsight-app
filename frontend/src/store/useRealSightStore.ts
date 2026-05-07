@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { getPortfolios, getPropertiesByPortfolio, getTenantsByProperty } from '../services/api';
+import { getPortfolios, getPropertiesByPortfolio, getTenantsByProperty, getTenantsByPortfolio } from '../services/api';
 
 // ... (keep all the existing type definitions: Tab, DateFilter, Portfolio, etc.)
 
@@ -75,17 +75,17 @@ export const useRealSightStore = create<RealSightState>((set, get) => ({
   },
 
   selectPortfolio: async (portfolioId: string | null) => {
-    set({ selectedPortfolioId: portfolioId, isLoadingProperties: true, properties: [], tenants: [] });
+    set({ selectedPortfolioId: portfolioId, isLoadingProperties: true, properties: [], tenants: [], selectedPropertyId: null });
     if (portfolioId) {
       try {
-        const properties = await getPropertiesByPortfolio(portfolioId);
-        set({ properties, isLoadingProperties: false });
-        if (properties.length > 0) {
-          await get().selectProperty(properties[0].id);
-        }
+        const [properties, tenants] = await Promise.all([
+          getPropertiesByPortfolio(portfolioId),
+          getTenantsByPortfolio(portfolioId),
+        ]);
+        set({ properties, tenants, isLoadingProperties: false, isLoadingTenants: false });
       } catch (error) {
-        console.error("Failed to fetch properties", error);
-        set({ isLoadingProperties: false });
+        console.error('Failed to fetch portfolio data', error);
+        set({ isLoadingProperties: false, isLoadingTenants: false });
       }
     } else {
       set({ properties: [], tenants: [], isLoadingProperties: false });
@@ -94,17 +94,16 @@ export const useRealSightStore = create<RealSightState>((set, get) => ({
 
   selectProperty: async (propertyId: string | null) => {
     set({ selectedPropertyId: propertyId, isLoadingTenants: true, tenants: [] });
-    if (propertyId) {
-      try {
-        const tenants = await getTenantsByProperty(propertyId);
-        set({ tenants, isLoadingTenants: false });
-        // In a real app, you'd also fetch payment records here
-      } catch (error) {
-        console.error("Failed to fetch tenants", error);
-        set({ isLoadingTenants: false });
-      }
-    } else {
-      set({ tenants: [], isLoadingTenants: false });
+    const portfolioId = get().selectedPortfolioId;
+    try {
+      // null = All Properties → load all tenants for the whole portfolio
+      const tenants = propertyId
+        ? await getTenantsByProperty(propertyId)
+        : portfolioId ? await getTenantsByPortfolio(portfolioId) : [];
+      set({ tenants, isLoadingTenants: false });
+    } catch (error) {
+      console.error('Failed to fetch tenants', error);
+      set({ isLoadingTenants: false });
     }
   },
 }));

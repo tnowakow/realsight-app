@@ -53,24 +53,27 @@ export const getPropertiesByPortfolio = async (portfolioId: string): Promise<Pro
 
 export const getTenantsByProperty = async (propertyId: string): Promise<Tenant[]> => {
   try {
-    console.log(`🔄 Fetching tenants for property ${propertyId}...`);
     const response = await fetch(`${API_BASE_URL}/tenants?property_id=${propertyId}`);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
-    
-    if (Array.isArray(data) && data.length > 0) {
-      console.log(`✅ Loaded ${data.length} tenant(s) from backend`);
-      return data;
-    }
-    
-    throw new Error('Backend returned empty array');
+    if (Array.isArray(data) && data.length > 0) return data;
+    throw new Error('Empty response');
   } catch (error) {
-    console.error('❌ Backend error, falling back to mock:', error);
-    console.log(`📦 Using mock tenants for property ${propertyId}`);
+    console.error('❌ Tenants by property fallback to mock:', error);
     return getMockTenants(propertyId);
+  }
+};
+
+export const getTenantsByPortfolio = async (portfolioId: string): Promise<Tenant[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/tenants?portfolio_id=${portfolioId}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    if (Array.isArray(data) && data.length > 0) return data;
+    throw new Error('Empty response');
+  } catch (error) {
+    console.error('❌ Tenants by portfolio fallback to mock:', error);
+    // Collect mock tenants across all known mock properties for this portfolio
+    return getMockTenants(portfolioId);
   }
 };

@@ -11,8 +11,7 @@ export const OverviewTab = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!selectedPortfolioId || !selectedPropertyId) return;
-    
+    if (!selectedPortfolioId) return;
     setIsLoading(true);
     const timer = setTimeout(() => setIsLoading(false), 300);
     return () => clearTimeout(timer);
@@ -37,10 +36,8 @@ export const OverviewTab = () => {
         totalPaid += payment?.amount_paid || 0;
         totalDaysPastDue += payment?.days_past_due || 0;
         
-        // Count occupied units
-        if (lease.status === 'active') {
-          occupiedUnits++;
-        }
+        // Any tenant with a lease = occupied unit
+        occupiedUnits++;
         totalUnits++;
         
         // Identify problem tenants (>15 days past due or partial/defaulted)
@@ -103,7 +100,7 @@ export const OverviewTab = () => {
     return (
       <div className="space-y-8 animate-in fade-in duration-500">
         <div className="flex items-center justify-center py-12">
-          <div className="text-slate-400">No data available. Select a portfolio and property.</div>
+          <div className="text-slate-400">{selectedPortfolioId ? 'Loading portfolio data...' : 'Select a portfolio to get started.'}</div>
         </div>
       </div>
     );

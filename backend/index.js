@@ -78,8 +78,29 @@ app.get('/api/properties/:id', async (req, res) => {
 // ─── Tenants ───────────────────────────────────────────────────────────────
 app.get('/api/tenants', async (req, res) => {
   try {
-    const { property_id } = req.query;
-    if (!property_id) return res.status(400).json({ error: 'property_id is required' });
+    const { property_id, portfolio_id } = req.query;
+    if (!property_id && !portfolio_id) return res.status(400).json({ error: 'property_id or portfolio_id is required' });
+
+    // Portfolio-wide: fetch all tenants across all properties
+    if (portfolio_id && !property_id) {
+      const properties = await prisma.property.findMany({ where: { portfolio_id }, select: { id: true } });
+      const propertyIds = properties.map(p => p.id);
+      const tenants = await prisma.tenant.findMany({
+        where: { property_id: { in: propertyIds } },
+        include: { leases: true, payments: { orderBy: { time: 'desc' }, take: 12 } },
+        orderBy: { business_name: 'asc' }
+      });
+      const enriched = tenants.map(t => {
+        const lease = t.leases[0] || null;
+        const currentPayment = t.payments[0] || null;
+        return { ...t, lease, currentPayment,
+          outstanding_balance: t.payments.reduce((s, p) => s + Math.max(0, p.amount_due - p.amount_paid), 0),
+          total_paid: t.payments.reduce((s, p) => s + p.amount_paid, 0),
+          total_due: t.payments.reduce((s, p) => s + p.amount_due, 0)
+        };
+      });
+      return res.json(enriched);
+    }
 
     const tenants = await prisma.tenant.findMany({
       where: { property_id },
