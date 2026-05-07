@@ -8,6 +8,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Install app dependencies
+RUN apt-get update -y && apt-get install -y openssl
 RUN npm cache clean --force && npm install
 
 # Copy the rest of the application's code
