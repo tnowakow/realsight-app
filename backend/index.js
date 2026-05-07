@@ -35,6 +35,20 @@ app.get('/api/properties', async (req, res) => {
   }
 });
 
+app.get('/api/tenants', async (req, res) => {
+  try {
+    const { property_id } = req.query;
+    if (!property_id) {
+      return res.status(400).send('property_id query parameter is required');
+    }
+    const { rows } = await pool.query('SELECT * FROM tenants WHERE property_id = $1', [property_id]);
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server Error');
+  }
+});
+
 app.get('/', (req, res) => {
   res.send('RealSight Backend is running!');
 });
