@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useRealSightStore } from '../../store/useRealSightStore';
+import { useRealSightStore, type PaymentRecord } from '../../store/useRealSightStore';
 import { AlertCard } from '../ui/AlertCard';
 
 export const OverviewTab = () => {
@@ -33,9 +33,9 @@ export const OverviewTab = () => {
       const lease = tenant.lease;
       if (lease) {
         totalRentDue += lease.monthly_rent || 0;
-        const payment = tenant.currentPayment || {};
-        totalPaid += payment.amount_paid || 0;
-        totalDaysPastDue += payment.days_past_due || 0;
+        const payment: PaymentRecord | undefined = tenant.currentPayment;
+        totalPaid += payment?.amount_paid || 0;
+        totalDaysPastDue += payment?.days_past_due || 0;
         
         // Count occupied units
         if (lease.status === 'active') {
@@ -44,14 +44,14 @@ export const OverviewTab = () => {
         totalUnits++;
         
         // Identify problem tenants (>15 days past due or partial/defaulted)
-        if ((payment.days_past_due || 0) > 15 || 
-            ['partial', 'delinquent', 'defaulted'].includes(payment.payment_status)) {
+        if ((payment?.days_past_due || 0) > 15 || 
+            ['partial', 'delinquent', 'defaulted'].includes(payment?.payment_status)) {
           problemTenants.push({
             tenant,
-            payment,
-            severity: payment.payment_status === 'defaulted' ? 'critical' : 
-                     (payment.days_past_due || 0) > 45 ? 'high' : 'medium',
-            amountOwed: (payment.amount_due || 0) - (payment.amount_paid || 0)
+            payment: payment!,
+            severity: payment!.payment_status === 'defaulted' ? 'critical' : 
+                     (payment!.days_past_due || 0) > 45 ? 'high' : 'medium',
+            amountOwed: (payment!.amount_due || 0) - (payment!.amount_paid || 0)
           });
         }
       }
