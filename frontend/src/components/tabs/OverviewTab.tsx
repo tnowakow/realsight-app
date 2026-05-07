@@ -19,68 +19,88 @@ export const OverviewTab = () => {
 
   // Calculate portfolio metrics from tenant/payment data
   const calculateMetrics = () => {
-    if (!tenants.length) return null;
-    
+    if (!selectedPortfolioId) return null;
+    if (!tenants.length && !properties.length) return null;
+
+    // ── Occupancy ──────────────────────────────────────────────────────────
+    // Total units = sum of unit_count on the relevant properties (not tenant count)
+    // Occupied units = number of tenants who have a lease record
+    const relevantProperties = selectedPropertyId
+      ? properties.filter(p => p.id === selectedPropertyId)
+      : properties;
+    const totalUnits = relevantProperties.reduce((sum, p) => sum + (p.unit_count || 0), 0);
+    const occupiedUnits = tenants.filter(t => t.lease).length;
+    const occupancyRate = totalUnits > 0 ? (occupiedUnits / totalUnits) * 100 : 0;
+
+    // ── Rent & payments ───────────────────────────────────────────────────
     let totalRentDue = 0;
     let totalPaid = 0;
-    let totalDaysPastDue = 0;
-    let problemTenants: any[] = [];
-    let occupiedUnits = 0;
-    let totalUnits = 0;
-    
+    let lateDaysPastDueSum = 0;
+    let lateTenantCount = 0;
+    const problemTenants: any[] = [];
+
     tenants.forEach(tenant => {
       const lease = tenant.lease;
-      if (lease) {
-        totalRentDue += lease.monthly_rent || 0;
-        const payment: PaymentRecord | undefined = tenant.currentPayment;
-        totalPaid += payment?.amount_paid || 0;
-        totalDaysPastDue += payment?.days_past_due || 0;
-        
-        // Any tenant with a lease = occupied unit
-        occupiedUnits++;
-        totalUnits++;
-        
-        // Identify problem tenants (>15 days past due or partial/defaulted)
-        const paymentStatus = payment?.payment_status || 'paid';
-        if ((payment?.days_past_due || 0) > 15 || 
+      const payment: PaymentRecord | undefined = tenant.currentPayment;
+
+      if (lease) totalRentDue += lease.monthly_rent || 0;
+      if (payment) {
+        totalPaid += payment.amount_paid || 0;
+
+        // Avg days past due: only count tenants that are actually late
+        if ((payment.days_past_due || 0) > 0) {
+          lateDaysPastDueSum += payment.days_past_due;
+          lateTenantCount++;
+        }
+
+        const paymentStatus = payment.payment_status || 'paid';
+        if ((payment.days_past_due || 0) > 15 ||
             ['partial', 'delinquent', 'defaulted'].includes(paymentStatus)) {
           problemTenants.push({
             tenant,
-            payment: payment!,
-            severity: paymentStatus === 'defaulted' ? 'critical' : 
-                     (payment!.days_past_due || 0) > 45 ? 'high' : 'medium',
-            amountOwed: (payment!.amount_due || 0) - (payment!.amount_paid || 0)
+            payment,
+            severity:
+              paymentStatus === 'defaulted' ? 'critical' :
+              (payment.days_past_due || 0) > 45 ? 'high' : 'medium',
+            amountOwed: Math.max(0, (payment.amount_due || 0) - (payment.amount_paid || 0))
           });
         }
       }
     });
-    
-    const avgDaysPastDue = tenants.length ? Math.round(totalDaysPastDue / tenants.length) : 0;
-    const collectionRate = totalRentDue > 0 ? (totalPaid / totalRentDue) * 100 : 0;
-    const outstandingDebt = totalRentDue - totalPaid;
-    const occupancyRate = totalUnits > 0 ? (occupiedUnits / totalUnits) * 100 : 0;
-    
-    // Portfolio health score (0-100) based on key metrics
+
+    const collectionRate  = totalRentDue > 0 ? (totalPaid / totalRentDue) * 100 : 100;
+    const outstandingDebt = Math.max(0, totalRentDue - totalPaid);
+    // Avg days past due only among tenants who are actually late (not diluted by on-time payers)
+    const avgDaysPastDue  = lateTenantCount > 0 ? Math.round(lateDaysPastDueSum / lateTenantCount) : 0;
+    // NOI margin: rough estimate using a standard 35% operating expense ratio
+    // Replace with real expense data when available
+    const noiMargin = totalPaid > 0 ? parseFloat((((totalPaid - totalPaid * 0.35) / totalPaid) * 100).toFixed(1)) : 0;
+
+    // ── Health score ──────────────────────────────────────────────────────
     let healthScore = 100;
-    if (collectionRate < 95) healthScore -= 20;
-    if (avgDaysPastDue > 10) healthScore -= 15;
-    if (problemTenants.length > 3) healthScore -= 25;
-    if (outstandingDebt > 20000) healthScore -= 20;
-    if (occupancyRate < 90) healthScore -= 15;
+    if (collectionRate < 95)          healthScore -= 20;
+    if (avgDaysPastDue > 10)          healthScore -= 15;
+    if (problemTenants.length > 3)    healthScore -= 25;
+    if (outstandingDebt > 20000)      healthScore -= 20;
+    if (occupancyRate < 90)           healthScore -= 15;
     healthScore = Math.max(0, Math.min(100, healthScore));
-    
+
     return {
-      collectionRate: parseFloat(collectionRate.toFixed(1)),
+      collectionRate:      parseFloat(collectionRate.toFixed(1)),
       avgDaysPastDue,
       outstandingDebt,
+      noiMargin,
       problemTenantsCount: problemTenants.length,
       totalRentDue,
-      tenantCount: tenants.length,
-      propertyCount: properties.length,
+      totalPaid,
+      tenantCount:   tenants.length,
+      propertyCount: relevantProperties.length,
+      totalUnits,
+      occupiedUnits,
       occupancyRate: parseFloat(occupancyRate.toFixed(1)),
       healthScore,
       problemTenants,
-      alertsActive: problemTenants.filter(t => t.severity === 'critical' || t.severity === 'high').length
+      alertsActive:  problemTenants.filter(t => t.severity === 'critical' || t.severity === 'high').length
     };
   };
 
@@ -195,10 +215,10 @@ export const OverviewTab = () => {
         />
         <KPICard 
           label="NOI Margin" 
-          value={32.5} 
+          value={metrics.noiMargin} 
           unit="%" 
           target="≥25%"
-          isGood={true}
+          isGood={metrics.noiMargin >= 25}
         />
       </section>
 
