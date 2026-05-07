@@ -1,1 +1,6 @@
-# Migration lock file - do not edit manually
+provider = "postgresql"
+
+[[migrations]]
+timestamp = "2026-05-07T18:00:00"
+name = "init_real_sight_schema"
+sha256 = "d497dc4694afd00238cdba66018a125f54f740dcf3576e092f0ec0b0d7193626"
