@@ -1,125 +1,109 @@
 import { create } from 'zustand';
+import { getPortfolios, getPropertiesByPortfolio, getTenantsByProperty } from '../services/api';
+
+// ... (keep all the existing type definitions: Tab, DateFilter, Portfolio, etc.)
 
 export type Tab = 'overview' | 'tenant-financials' | 'portfolio-performance' | 'acquisition';
 export type DateFilter = 'today' | 'this-week' | 'this-month' | 'last-month' | 'this-quarter' | 'ytd' | 'custom';
 
-// Real Estate Domain Entities
 export interface Portfolio {
-  id: string;
-  name: string;
-  owner_name?: string;
-  headquarters_city?: string;
-  headquarters_state?: string;
-  subscription_tier?: string;
+  id: string; name: string; owner_name?: string; headquarters_city?: string; headquarters_state?: string; subscription_tier?: string;
 }
-
 export interface Property {
-  id: string;
-  portfolio_id: string;
-  name: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  property_type?: 'Retail' | 'Office' | 'Industrial' | 'Mixed-Use';
-  total_square_feet?: number;
-  unit_count?: number;
-  is_acquisition_target?: boolean;
-  acquisition_score?: number;
+  id: string; portfolio_id: string; name: string; address?: string; city?: string; state?: string; property_type?: 'Retail' | 'Office' | 'Industrial' | 'Mixed-Use'; total_square_feet?: number; unit_count?: number; is_acquisition_target?: boolean; acquisition_score?: number;
 }
-
 export interface Tenant {
-  id: string;
-  property_id: string;
-  business_name: string;
-  business_type?: string;
-  contact_email?: string;
-  credit_rating?: string;
+  id: string; property_id: string; business_name: string; business_type?: string; contact_email?: string; credit_rating?: string;
 }
-
 export interface Lease {
-  id: string;
-  tenant_id: string;
-  property_id: string;
-  lease_start_date: string;
-  lease_end_date: string;
-  monthly_rent: number;
-  rent_per_sqft?: number;
-  square_footage?: number;
-  lease_type?: 'NNN' | 'Gross' | 'Modified Gross';
-  status?: 'active' | 'expired' | 'terminated';
+  id: string; tenant_id: string; property_id: string; lease_start_date: string; lease_end_date: string; monthly_rent: number; rent_per_sqft?: number; square_footage?: number; lease_type?: 'NNN' | 'Gross' | 'Modified Gross'; status?: 'active' | 'expired' | 'terminated';
 }
-
 export interface PaymentRecord {
-  time: string;
-  property_id: string;
-  tenant_id: string;
-  amount_due: number;
-  amount_paid: number;
-  payment_status: 'paid' | 'partial' | 'late' | 'delinquent' | 'defaulted';
-  days_past_due: number;
-  late_fee_assessed?: number;
+  time: string; property_id: string; tenant_id: string; amount_due: number; amount_paid: number; payment_status: 'paid' | 'partial' | 'late' | 'delinquent' | 'defaulted'; days_past_due: number; late_fee_assessed?: number;
 }
 
 interface RealSightState {
   activeTab: Tab;
   setActiveTab: (tab: Tab) => void;
-  dateFilter: DateFilter;
-  setDateFilter: (filter: DateFilter) => void;
-  lastUpdated: string;
-  setLastUpdated: (timestamp: string) => void;
   
-  // Portfolio selector state
   portfolios: Portfolio[];
-  setPortfolios: (portfolios: Portfolio[]) => void;
-  selectedPortfolioId: string | null;
-  setSelectedPortfolioId: (portfolioId: string | null) => void;
-  
-  // Property drill-down
   properties: Property[];
-  setProperties: (properties: Property[]) => void;
-  selectedPropertyId: string | null;
-  setSelectedPropertyId: (propertyId: string | null) => void;
-  
-  // Tenant data
   tenants: Tenant[];
-  setTenants: (tenants: Tenant[]) => void;
-  
-  // Payment records
   paymentRecords: PaymentRecord[];
-  setPaymentRecords: (records: PaymentRecord[]) => void;
   
-  isLoadingData: boolean;
-  setIsLoadingData: (loading: boolean) => void;
+  selectedPortfolioId: string | null;
+  selectedPropertyId: string | null;
+  
+  isLoadingPortfolios: boolean;
+  isLoadingProperties: boolean;
+  isLoadingTenants: boolean;
+
+  fetchPortfolios: () => Promise<void>;
+  selectPortfolio: (portfolioId: string | null) => Promise<void>;
+  selectProperty: (propertyId: string | null) => Promise<void>;
 }
 
-export const useRealSightStore = create<RealSightState>((set) => ({
+export const useRealSightStore = create<RealSightState>((set, get) => ({
   activeTab: 'overview',
   setActiveTab: (tab) => set({ activeTab: tab }),
-  dateFilter: 'this-month',
-  setDateFilter: (filter) => set({ dateFilter: filter }),
-  lastUpdated: new Date().toLocaleString(),
-  setLastUpdated: (timestamp) => set({ lastUpdated: timestamp }),
   
-  // Portfolio defaults
   portfolios: [],
-  setPortfolios: (portfolios) => set({ portfolios }),
-  selectedPortfolioId: null,
-  setSelectedPortfolioId: (portfolioId) => set({ selectedPortfolioId: portfolioId }),
-  
-  // Property defaults
   properties: [],
-  setProperties: (properties) => set({ properties }),
-  selectedPropertyId: null,
-  setSelectedPropertyId: (propertyId) => set({ selectedPropertyId: propertyId }),
-  
-  // Tenant defaults
   tenants: [],
-  setTenants: (tenants) => set({ tenants }),
-  
-  // Payment records
   paymentRecords: [],
-  setPaymentRecords: (records) => set({ paymentRecords: records }),
   
-  isLoadingData: false,
-  setIsLoadingData: (loading) => set({ isLoadingData: loading }),
+  selectedPortfolioId: null,
+  selectedPropertyId: null,
+  
+  isLoadingPortfolios: false,
+  isLoadingProperties: false,
+  isLoadingTenants: false,
+
+  fetchPortfolios: async () => {
+    set({ isLoadingPortfolios: true });
+    try {
+      const portfolios = await getPortfolios();
+      set({ portfolios, isLoadingPortfolios: false });
+      if (portfolios.length > 0) {
+        await get().selectPortfolio(portfolios[0].id);
+      }
+    } catch (error) {
+      console.error("Failed to fetch portfolios", error);
+      set({ isLoadingPortfolios: false });
+    }
+  },
+
+  selectPortfolio: async (portfolioId: string | null) => {
+    set({ selectedPortfolioId: portfolioId, isLoadingProperties: true, properties: [], tenants: [] });
+    if (portfolioId) {
+      try {
+        const properties = await getPropertiesByPortfolio(portfolioId);
+        set({ properties, isLoadingProperties: false });
+        if (properties.length > 0) {
+          await get().selectProperty(properties[0].id);
+        }
+      } catch (error) {
+        console.error("Failed to fetch properties", error);
+        set({ isLoadingProperties: false });
+      }
+    } else {
+      set({ properties: [], tenants: [], isLoadingProperties: false });
+    }
+  },
+
+  selectProperty: async (propertyId: string | null) => {
+    set({ selectedPropertyId: propertyId, isLoadingTenants: true, tenants: [] });
+    if (propertyId) {
+      try {
+        const tenants = await getTenantsByProperty(propertyId);
+        set({ tenants, isLoadingTenants: false });
+        // In a real app, you'd also fetch payment records here
+      } catch (error) {
+        console.error("Failed to fetch tenants", error);
+        set({ isLoadingTenants: false });
+      }
+    } else {
+      set({ tenants: [], isLoadingTenants: false });
+    }
+  },
 }));

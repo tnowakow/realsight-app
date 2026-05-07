@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
+import { useRealSightStore } from './store/useRealSightStore';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useRealSightStore, type DateFilter } from './store/useRealSightStore';
 import { PortfolioPropertySelector } from './components/PortfolioPropertySelector';
@@ -377,6 +378,12 @@ const AcquisitionTargetsTab = () => {
 // ============================================================================
 
 function App() {
+  const fetchPortfolios = useRealSightStore((state) => state.fetchPortfolios);
+
+  useEffect(() => {
+    fetchPortfolios();
+  }, [fetchPortfolios]);
+
   return (
     <Router>
       <div className="min-h-screen bg-slate-950 text-white">
