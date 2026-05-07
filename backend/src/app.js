@@ -11,6 +11,11 @@ const kpiRoutes = require('./routes/kpiRoutes');
 const recommendationsRoutes = require('./routes/recommendationsRoutes');
 const operationsRoutes = require('./routes/operationsRoutes');
 
+// RealSight routes
+const portfolioRoutes = require('./routes/portfolioRoutes');
+const propertyRoutes = require('./routes/propertyRoutes');
+const tenantRoutes = require('./routes/tenantRoutes');
+
 const app = express();
 
 app.use(cors());
@@ -27,7 +32,12 @@ app.use((req, res, next) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
-// Routes
+// RealSight routes
+app.use('/api/portfolios', portfolioRoutes);
+app.use('/api/properties', propertyRoutes);
+app.use('/api/tenants', tenantRoutes);
+
+// Dentsight routes (legacy - kept for compatibility)
 app.use('/api/auth', authRoutes);
 app.use('/api/metrics', metricsRoutes);
 app.use('/api/alerts', alertsRoutes);

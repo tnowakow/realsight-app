@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "echo 'Starting deployment...' && (npx prisma migrate deploy && echo 'Migration successful!') || (echo 'Migration failed, retrying in 2s...' && sleep 2 && npx prisma migrate deploy && echo 'Migration successful on retry 1!') || (echo 'Migration failed, retrying in 5s...' && sleep 5 && npx prisma migrate deploy && echo 'Migration successful on retry 2!') && echo 'Starting server...' && node index.js",
-    "start:robust": "sleep 5 && npx prisma migrate deploy && node index.js",
+    "start": "echo 'Starting deployment...' && npx prisma migrate deploy && echo 'Migration successful!' && node src/seeds/seed.js && echo 'Seeding complete!' && echo 'Starting server...' && node index.js",
+    "start:robust": "sleep 5 && npx prisma migrate deploy && node src/seeds/seed.js && node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -13,6 +13,8 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@prisma/client": "5.16.1",
+    "cors": "^2.8.5",
     "express": "^5.2.1",
     "pg": "^8.12.0",
     "prisma": "5.16.1"
