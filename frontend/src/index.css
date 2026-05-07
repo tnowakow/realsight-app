@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+/* RealSight Branding Colors */
+:root {
+  --color-primary: #10b981; /* emerald-500 */
+  --color-secondary: #14b8a6; /* teal-500 */
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #0f172a; /* slate-900 */
+  color: #f8fafc; /* slate-50 */
+}
+
+* {
+  box-sizing: border-box;
+}
