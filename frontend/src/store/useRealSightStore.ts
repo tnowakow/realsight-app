@@ -14,6 +14,7 @@ export interface Property {
 }
 export interface Tenant {
   id: string; property_id: string; business_name: string; business_type?: string; contact_email?: string; credit_rating?: string;
+  lease?: Lease; currentPayment?: PaymentRecord;
 }
 export interface Lease {
   id: string; tenant_id: string; property_id: string; lease_start_date: string; lease_end_date: string; monthly_rent: number; rent_per_sqft?: number; square_footage?: number; lease_type?: 'NNN' | 'Gross' | 'Modified Gross'; status?: 'active' | 'expired' | 'terminated';

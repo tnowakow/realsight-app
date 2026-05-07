@@ -212,7 +212,7 @@ export const OverviewTab = () => {
             {metrics.problemTenants.slice(0, 5).map((item, idx) => (
               <AlertCard 
                 key={idx}
-                type={item.severity === 'critical' ? 'error' : item.severity === 'high' ? 'warning' : 'info'}
+                type={item.severity === 'critical' ? 'warning' : item.severity === 'high' ? 'warning' : 'info'}
                 headline={`${item.tenant.business_name} — ${item.payment.payment_status.toUpperCase()}`}
                 subtext={`Days Past Due: ${item.payment.days_past_due} | Amount Owed: ${formatCurrency(item.amountOwed)}`}
               />
