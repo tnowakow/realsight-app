@@ -3,62 +3,66 @@ import { mockPortfolios, getPropertiesByPortfolio as getMockProperties, getTenan
 
 const API_BASE_URL = 'https://realsight-app-production.up.railway.app/api';
 
+// For now, use mock data as primary source since backend doesn't have PostgreSQL attached
+// TODO: Switch to real API calls when Railway PostgreSQL service is added and seeded
+
 export const getPortfolios = async (): Promise<Portfolio[]> => {
+  // Simulate network delay for realism
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
   try {
     const response = await fetch(`${API_BASE_URL}/portfolios`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch portfolios: ${response.statusText}`);
-    }
-    const data = await response.json();
+    if (!response.ok) throw new Error('Backend not ready');
     
-    // If backend returns empty or only 1 portfolio, supplement with mock data for demo
-    if (!Array.isArray(data) || data.length < 3) {
-      console.log('Backend returned limited portfolios, using mock data for demo');
-      return mockPortfolios;
+    const data = await response.json();
+    // Only use backend data if it returns 3+ portfolios
+    if (Array.isArray(data) && data.length >= 3) {
+      console.log('✅ Using real backend portfolios');
+      return data;
     }
-    return data;
   } catch (error) {
-    console.error('Error fetching portfolios:', error);
-    return mockPortfolios;
+    console.log('ℹ️ Backend not ready, using mock portfolios');
   }
+  
+  return mockPortfolios;
 };
 
 export const getPropertiesByPortfolio = async (portfolioId: string): Promise<Property[]> => {
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
   try {
     const response = await fetch(`${API_BASE_URL}/properties?portfolio_id=${portfolioId}`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch properties: ${response.statusText}`);
-    }
-    const data = await response.json();
+    if (!response.ok) throw new Error('Backend not ready');
     
-    // If backend returns empty array for this portfolio, use mock data
-    if (!Array.isArray(data) || data.length === 0) {
-      console.log(`No properties found for portfolio ${portfolioId}, using mock data`);
-      return getMockProperties(portfolioId);
+    const data = await response.json();
+    // Only use backend data if it returns properties for this portfolio
+    if (Array.isArray(data) && data.length > 0) {
+      console.log(`✅ Using real backend properties for ${portfolioId}`);
+      return data;
     }
-    return data;
   } catch (error) {
-    console.error('Error fetching properties:', error);
-    return getMockProperties(portfolioId);
+    console.log(`ℹ️ Backend not ready, using mock properties for ${portfolioId}`);
   }
+  
+  return getMockProperties(portfolioId);
 };
 
 export const getTenantsByProperty = async (propertyId: string): Promise<Tenant[]> => {
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
   try {
     const response = await fetch(`${API_BASE_URL}/tenants?property_id=${propertyId}`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch tenants: ${response.statusText}`);
-    }
-    const data = await response.json();
+    if (!response.ok) throw new Error('Backend not ready');
     
-    // If backend returns empty array for this property, use mock data
-    if (!Array.isArray(data) || data.length === 0) {
-      console.log(`No tenants found for property ${propertyId}, using mock data`);
-      return getMockTenants(propertyId);
+    const data = await response.json();
+    // Only use backend data if it returns tenants for this property
+    if (Array.isArray(data) && data.length > 0) {
+      console.log(`✅ Using real backend tenants for ${propertyId}`);
+      return data;
     }
-    return data;
   } catch (error) {
-    console.error('Error fetching tenants:', error);
-    return getMockTenants(propertyId);
+    console.log(`ℹ️ Backend not ready, using mock tenants for ${propertyId}`);
   }
+  
+  return getMockTenants(propertyId);
 };
