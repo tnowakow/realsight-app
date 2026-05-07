@@ -44,12 +44,13 @@ export const OverviewTab = () => {
         totalUnits++;
         
         // Identify problem tenants (>15 days past due or partial/defaulted)
+        const paymentStatus = payment?.payment_status || 'paid';
         if ((payment?.days_past_due || 0) > 15 || 
-            ['partial', 'delinquent', 'defaulted'].includes(payment?.payment_status)) {
+            ['partial', 'delinquent', 'defaulted'].includes(paymentStatus)) {
           problemTenants.push({
             tenant,
             payment: payment!,
-            severity: payment!.payment_status === 'defaulted' ? 'critical' : 
+            severity: paymentStatus === 'defaulted' ? 'critical' : 
                      (payment!.days_past_due || 0) > 45 ? 'high' : 'medium',
             amountOwed: (payment!.amount_due || 0) - (payment!.amount_paid || 0)
           });
