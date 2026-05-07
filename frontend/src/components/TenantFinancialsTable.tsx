@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useRealSightStore } from '../store/useRealSightStore';
-import { ArrowUp, ArrowDown, AlertTriangle, CheckCircle, Clock, DollarSign, Loader } from 'lucide-react';
+import { Loader } from 'lucide-react';
 
 export const TenantFinancialsTable: React.FC = () => {
-  const { tenants, paymentRecords, isLoadingTenants, selectedPropertyId } = useRealSightStore();
+  const { tenants, isLoadingTenants } = useRealSightStore();
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'daysPastDue', direction: 'desc' });
 
   const tenantFinancials = useMemo(() => {
@@ -40,10 +40,6 @@ export const TenantFinancialsTable: React.FC = () => {
       return 0;
     });
   }, [tenantFinancials, sortConfig]);
-
-  const handleSort = (key: string) => {
-    setSortConfig(prev => ({ key, direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc' }));
-  };
   
   // ... (UI helper functions like getStatusBadge, etc.)
 
