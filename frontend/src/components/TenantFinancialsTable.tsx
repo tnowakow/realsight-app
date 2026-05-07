@@ -4,7 +4,7 @@ import { Loader } from 'lucide-react';
 
 export const TenantFinancialsTable: React.FC = () => {
   const { tenants, isLoadingTenants } = useRealSightStore();
-  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'daysPastDue', direction: 'desc' });
+  const [sortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'daysPastDue', direction: 'desc' });
 
   const tenantFinancials = useMemo(() => {
     // In a real app, paymentRecords would be fetched from the API based on selected tenants
