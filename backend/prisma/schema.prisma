@@ -1,0 +1,98 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Portfolio {
+  id                 String      @id @default(uuid())
+  name               String
+  portfolio_hash     String      @unique
+  owner_name         String
+  headquarters_city  String
+  headquarters_state String
+  subscription_tier  String
+  properties         Property[]
+  metrics            Metric[]
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+}
+
+model Property {
+  id                String    @id @default(uuid())
+  portfolio         Portfolio @relation(fields: [portfolio_id], references: [id])
+  portfolio_id      String
+  name              String
+  city              String
+  state             String
+  zip_code          String
+  property_type     String
+  total_square_feet Int
+  unit_count        Int
+  tenants           Tenant[]
+  leases            Lease[]
+  payments          Payment[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model Tenant {
+  id              String         @id @default(uuid())
+  property        Property       @relation(fields: [property_id], references: [id])
+  property_id     String
+  business_name   String
+  tenant_hash     String         @unique
+  business_type   String
+  contact_email   String?
+  credit_rating   String?
+  leases          Lease[]
+  payments        Payment[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model Lease {
+  id               String   @id @default(uuid())
+  tenant           Tenant   @relation(fields: [tenant_id], references: [id])
+  tenant_id        String
+  property         Property @relation(fields: [property_id], references: [id])
+  property_id      String
+  lease_start_date DateTime
+  lease_end_date   DateTime
+  monthly_rent     Float
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Payment {
+  id              String   @id @default(uuid())
+  time            DateTime
+  property        Property @relation(fields: [property_id], references: [id])
+  property_id     String
+  tenant          Tenant   @relation(fields: [tenant_id], references: [id])
+  tenant_id       String
+  amount_due      Float
+  amount_paid     Float
+  payment_status  String
+  days_past_due   Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Metric {
+  id           String   @id @default(uuid())
+  portfolio    Portfolio @relation(fields: [portfolio_id], references: [id])
+  portfolio_id String
+  metric_date  DateTime
+  metric_name  String
+  metric_value Float
+  unit         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
