@@ -1,9 +1,8 @@
 import { mockData, type MockData } from '../data/mockData';
 
-// Use mock data for local development when backend is not available
-const useMockData = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+const useMockData = false;
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const API_BASE_URL = 'https://realsight-app-production.up.railway.app/api';
 
 // Company types
 export interface Company {
