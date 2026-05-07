@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useRealSightStore, type DateFilter } from './store/useRealSightStore';
 import { PortfolioPropertySelector } from './components/PortfolioPropertySelector';
@@ -178,8 +178,6 @@ const GlobalHeader = () => {
 // ============================================================================
 
 const OverviewTab = () => {
-  const selectedPropertyId = useRealSightStore((state) => state.selectedPropertyId);
-
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Page Title */}
@@ -311,20 +309,6 @@ const OverviewTab = () => {
 
 const TenantFinancialsTab = () => {
   const selectedPropertyId = useRealSightStore((state) => state.selectedPropertyId);
-
-  return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white mb-2">Tenant Financials</h1>
-        <p className="text-slate-400">Track rent collection, identify problem tenants, and manage delinquent accounts</p>
-      </div>
-
-      {/* Tenant Financials Table Component */}
-      <TenantFinancialsTable selectedPropertyId={selectedPropertyId} />
-    </div>
-  );
-};
 
 // ============================================================================
 // PORTFOLIO PERFORMANCE TAB (Placeholder)

@@ -7,7 +7,6 @@ interface TenantFinancialsTableProps {
 }
 
 export const TenantFinancialsTable: React.FC<TenantFinancialsTableProps> = ({ selectedPropertyId }) => {
-  const { tenants, paymentRecords } = useRealSightStore();
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({
     key: 'daysPastDue',
     direction: 'desc',
@@ -54,13 +53,16 @@ export const TenantFinancialsTable: React.FC<TenantFinancialsTableProps> = ({ se
   // Combine tenant info with latest payment record
   const tenantFinancials = mockTenants.map(tenant => {
     const latestPayment = mockPayments.find(p => p.tenant_id === tenant.id);
+    const monthlyRent = latestPayment?.amount_due ?? 0;
+    const amountPaid = latestPayment?.amount_paid ?? 0;
+    
     return {
       ...tenant,
-      monthlyRent: latestPayment?.amount_due || 0,
-      amountPaid: latestPayment?.amount_paid || 0,
-      amountOwed: (latestPayment?.amount_due || 0) - (latestPayment?.amount_paid || 0),
-      paymentStatus: latestPayment?.payment_status || 'paid',
-      daysPastDue: latestPayment?.days_past_due || 0,
+      monthlyRent,
+      amountPaid,
+      amountOwed: monthlyRent - amountPaid,
+      paymentStatus: latestPayment?.payment_status ?? 'paid',
+      daysPastDue: latestPayment?.days_past_due ?? 0,
     };
   });
 
@@ -208,8 +210,8 @@ export const TenantFinancialsTable: React.FC<TenantFinancialsTableProps> = ({ se
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className={`w-2 h-2 rounded-full ${
-                        tenant.credit_rating.startsWith('A') ? 'bg-emerald-500' : 
-                        tenant.credit_rating.startsWith('B') ? 'bg-blue-500' : 'bg-orange-500'
+                        tenant.credit_rating?.startsWith('A') ? 'bg-emerald-500' : 
+                        tenant.credit_rating?.startsWith('B') ? 'bg-blue-500' : 'bg-orange-500'
                       }`} />
                       <div>
                         <div className="text-sm font-medium text-white">{tenant.business_name}</div>

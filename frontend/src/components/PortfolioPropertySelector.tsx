@@ -17,7 +17,7 @@ export const PortfolioPropertySelector = () => {
   
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [propertyDropdownOpen, setPropertyDropdownOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(portfolios.length === 0);
+  const [isLoadingPortfolios, setIsLoadingPortfolios] = useState(portfolios.length === 0);
 
   // Mock data for initial load (will be replaced by API)
   useEffect(() => {
@@ -82,7 +82,7 @@ export const PortfolioPropertySelector = () => {
   const filteredProperties = properties.filter(p => p.portfolio_id === selectedPortfolioId);
   const selectedProperty = filteredProperties.find(p => p.id === selectedPropertyId);
 
-  if (isLoading) {
+  if (isLoadingPortfolios) {
     return (
       <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800">
         <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
