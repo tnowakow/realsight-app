@@ -1,7 +1,9 @@
-import type { Portfolio, Property, Tenant } from '../store/useRealSightStore';
+export type { Portfolio, Property, Tenant } from '../store/useRealSightStore';
 import { mockPortfolios, getPropertiesByPortfolio as getMockProperties, getTenantsByProperty as getMockTenants } from '../data/mockRealEstateData';
 
 const API_BASE_URL = 'https://realsight-app-production.up.railway.app/api';
+
+export type { Lease, PaymentRecord } from '../store/useRealSightStore';
 
 export interface PortfolioMetric {
   id: string;

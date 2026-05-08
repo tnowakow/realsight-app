@@ -59,16 +59,16 @@ const PropertyTenantDetail = ({ tenants, propertyId }: { tenants: Tenant[]; prop
       }
 
       const totalDue6mo = lease.monthly_rent * 6;
-      const totalPaid6mo = payments.slice(0, 6).reduce((s, p) => s + p.amount_paid, 0);
+      const totalPaid6mo = payments.slice(0, 6).reduce((s: number, p: any) => s + p.amount_paid, 0);
       const collectionRate = totalDue6mo > 0 ? (totalPaid6mo / totalDue6mo) * 100 : 0;
 
       return {
         id: tenant.id,
         name: tenant.business_name,
-        businessType: tenant.business_type,
-        creditRating: tenant.credit_rating,
+        businessType: tenant.business_type ?? 'N/A',
+        creditRating: tenant.credit_rating ?? 'N/A',
         monthlyRent: lease.monthly_rent,
-        recentPaymentStatus: recentPmt?.payment_status ?? 'no_data',
+        recentPaymentStatus: (recentPmt?.payment_status as any) ?? 'no_data',
         daysPastDue: recentPmt?.days_past_due ?? 0,
         amountPaid: recentPmt?.amount_paid ?? 0,
         collectionRate,
@@ -95,7 +95,7 @@ const PropertyTenantDetail = ({ tenants, propertyId }: { tenants: Tenant[]; prop
               {property.city}, {property.state} · {property.property_type}
             </p>
             <div className="flex gap-4 mt-3 text-xs text-slate-500">
-              <span>{property.total_square_feet.toLocaleString()} sqft</span>
+              <span>{(property.total_square_feet ?? 0).toLocaleString()} sqft</span></span>
               <span>·</span>
               <span>{tenantData.length} tenants</span>
               <span>·</span>
@@ -188,7 +188,7 @@ const PropertyTenantDetail = ({ tenants, propertyId }: { tenants: Tenant[]; prop
                                   return `${x},${y}`;
                                 }).join(' ')}
                               />
-                              {t.monthlyRevenue.map((v, i) => (
+                              {t.monthlyRevenue.map((v: number, i: number) => (
                                 <circle key={i} cx={(i / 5) * 60 + 2} cy={22 - ((v - min) / range) * 20} r="1.5" fill="#34d399" />
                               ))}
                             </>
