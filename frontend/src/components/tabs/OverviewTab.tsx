@@ -100,7 +100,7 @@ export const OverviewTab = () => {
         <section className="space-y-3">
           <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Priority Alerts</h2>
           {metrics.problemTenants.slice(0, 5).map((item: any, idx: number) => (
-            <AlertCard key={idx} type={'warning'} headline={`${item.tenant.business_name} — ${item.payment.payment_status.toUpperCase()}`} subtext={`Days Past Due: ${item.payment._calculated_days_past_due} | Amount Owed: ${formatCurrency(item.amountOwed)}`} />
+            <AlertCard key={idx} type={'warning'} headline={`${item.tenant.business_name} — ${item.payment.payment_status.toUpperCase()}`} subtext={`Days Past Due: ${(item.payment._calculated_days_past_due || item.payment.days_past_due)} | Amount Owed: ${formatCurrency(item.amountOwed)}`} />
           ))}
         </section>
       )}

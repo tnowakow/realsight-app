@@ -21,6 +21,7 @@ export interface Lease {
 }
 export interface PaymentRecord {
   time: string; property_id: string; tenant_id: string; amount_due: number; amount_paid: number; payment_status: 'paid' | 'partial' | 'late' | 'delinquent' | 'defaulted'; days_past_due: number; late_fee_assessed?: number;
+  _calculated_days_past_due?: number; // Add the field sent by the API
 }
 
 interface RealSightState {
