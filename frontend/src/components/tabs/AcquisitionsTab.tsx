@@ -271,10 +271,10 @@ const AcquisitionsTab: React.FC = () => {
                       <td className="px-4 py-3 font-medium text-white">{item.property_name}</td>
                       <td className="px-4 py-3 text-slate-400">{item.address}</td>
                       <td className="px-4 py-3 text-slate-400">{item.market}</td>
-                      <td className="px-4 py-3 text-right text-slate-300 font-mono">{(item.cap_rate * 100).toFixed(2)}%</td>
+                      <td className="px-4 py-3 text-right text-slate-300 font-mono">{(item.cap_rate ?? 0).toFixed(2)}%</td>
                       <td className="px-4 py-3 text-right">
                         <span className="font-mono">
-                          {getTrendArrow(item.noi_growth_percent)} {(item.noi_growth_percent).toFixed(1)}%
+                          {getTrendArrow(item.noi_growth_percent)} {(item.noi_growth_percent ?? 0).toFixed(1)}%
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">
