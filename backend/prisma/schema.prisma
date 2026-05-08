@@ -38,6 +38,7 @@ model Property {
   tenants           Tenant[]
   leases            Lease[]
   payments          Payment[]
+  acquisition_target AcquisitionTarget? // Relation to AcquisitionTarget
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 }
@@ -87,7 +88,7 @@ model Payment {
 
 model AcquisitionTarget {
   id                    String      @id @default(uuid())
-  property_id           String
+  property_id           String      @unique // Enforce one-to-one relationship
   property              Property    @relation(fields: [property_id], references: [id])
   deal_type             String
   narrative             String
