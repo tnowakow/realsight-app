@@ -1,207 +1,312 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// --- Helper Functions ---
-const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
-const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-const getRandomDate = (start, end) => new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
-const hashString = (str) => {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash |= 0; // Convert to 32bit integer
-  }
-  return `hash_${Math.abs(hash)}`;
+// ─── Helpers ───────────────────────────────────────────────────────────────
+const pick   = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const rndInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const hashId = (str) => { let h = 0; for (const c of str) { h = (h << 5) - h + c.charCodeAt(0); h |= 0; } return `h${Math.abs(h)}`; };
+
+// Return the first day of the month N months ago (0 = current month)
+const monthStart = (monthsAgo) => {
+  const d = new Date();
+  d.setDate(1);
+  d.setHours(0, 0, 0, 0);
+  d.setMonth(d.getMonth() - monthsAgo);
+  return d;
 };
 
+/**
+ * Generate 6 monthly payment records for a tenant based on their reliability profile.
+ *
+ * Profiles:
+ *   'excellent'  — always paid on time, full amount
+ *   'good'       — mostly paid, very occasional 1-5 day delay
+ *   'declining'  — started good 6 months ago, getting progressively worse
+ *   'chronic'    — consistently partial/late every month
+ *   'delinquent' — 2-3 months paid then stopped
+ *   'defaulted'  — stopped paying 4+ months ago, now defaulted
+ */
+const buildPaymentHistory = (tenantId, propertyId, monthlyRent, profile) => {
+  const records = [];
 
-// --- Data for Procedural Generation ---
-const portfolioNames = [
-  { name: 'Midwest Commercial Properties LLC', owner: 'Tom Nowakowski', city: 'Detroit', state: 'MI' },
-  { name: 'Great Lakes Retail Holdings', owner: 'Chuck Smith', city: 'Chicago', state: 'IL' },
-  { name: 'Sunbelt Logistics & Industrial', owner: 'Maria Garcia', city: 'Atlanta', state: 'GA' },
-  { name: 'West Coast Tech Partners', owner: 'David Chen', city: 'San Jose', state: 'CA' },
-  { name: 'Keystone Medical REIT', owner: 'Dr. Emily White', city: 'Philadelphia', state: 'PA' }
+  for (let monthsAgo = 5; monthsAgo >= 0; monthsAgo--) {
+    const time = monthStart(monthsAgo);
+    let amount_paid, payment_status, days_past_due;
+
+    switch (profile) {
+      case 'excellent':
+        amount_paid    = monthlyRent;
+        payment_status = 'paid';
+        days_past_due  = 0;
+        break;
+
+      case 'good':
+        amount_paid    = monthlyRent;
+        payment_status = 'paid';
+        days_past_due  = Math.random() < 0.15 ? rndInt(1, 5) : 0;
+        break;
+
+      case 'declining': {
+        // Month 5 (oldest) = good, month 0 (current) = delinquent
+        const severity = (5 - monthsAgo) / 5; // 0.0 → 1.0
+        if (severity < 0.4) {
+          amount_paid = monthlyRent; payment_status = 'paid'; days_past_due = 0;
+        } else if (severity < 0.7) {
+          days_past_due  = rndInt(5, 20);
+          amount_paid    = Math.round(monthlyRent * 0.85);
+          payment_status = 'partial';
+        } else {
+          days_past_due  = rndInt(25, 50);
+          amount_paid    = Math.round(monthlyRent * 0.3);
+          payment_status = 'delinquent';
+        }
+        break;
+      }
+
+      case 'chronic':
+        days_past_due  = rndInt(10, 35);
+        amount_paid    = Math.round(monthlyRent * (0.4 + Math.random() * 0.4)); // 40-80%
+        payment_status = days_past_due > 20 ? 'delinquent' : 'partial';
+        break;
+
+      case 'delinquent':
+        // Paid months 5-3, stopped months 2-0
+        if (monthsAgo >= 3) {
+          amount_paid = monthlyRent; payment_status = 'paid'; days_past_due = 0;
+        } else {
+          days_past_due  = rndInt(30, 60) + (2 - monthsAgo) * 15;
+          amount_paid    = 0;
+          payment_status = 'delinquent';
+        }
+        break;
+
+      case 'defaulted':
+        // Paid months 5-4, then stopped and defaulted
+        if (monthsAgo >= 4) {
+          amount_paid = monthlyRent; payment_status = 'paid'; days_past_due = 0;
+        } else {
+          days_past_due  = rndInt(60, 90) + (3 - monthsAgo) * 20;
+          amount_paid    = monthsAgo === 3 ? Math.round(monthlyRent * 0.25) : 0;
+          payment_status = 'defaulted';
+        }
+        break;
+
+      default:
+        amount_paid = monthlyRent; payment_status = 'paid'; days_past_due = 0;
+    }
+
+    records.push({ time, property_id: propertyId, tenant_id: tenantId, amount_due: monthlyRent, amount_paid, payment_status, days_past_due });
+  }
+
+  return records;
+};
+
+// ─── Static data tables ───────────────────────────────────────────────────
+const PORTFOLIOS = [
+  { name: 'Midwest Commercial Properties LLC', owner: 'Tom Nowakowski',  city: 'Detroit',      state: 'MI', tier: 'Enterprise' },
+  { name: 'Great Lakes Retail Holdings',        owner: 'Chuck Smith',     city: 'Chicago',      state: 'IL', tier: 'Enterprise' },
+  { name: 'Sunbelt Logistics & Industrial',     owner: 'Maria Garcia',    city: 'Atlanta',      state: 'GA', tier: 'Professional' },
+  { name: 'West Coast Tech Partners',           owner: 'David Chen',      city: 'San Jose',     state: 'CA', tier: 'Enterprise' },
+  { name: 'Keystone Medical REIT',              owner: 'Dr. Emily White', city: 'Philadelphia', state: 'PA', tier: 'Professional' },
 ];
 
-const propertyData = {
-  Office: { names: ['Metro Tower', 'Innovation Hub', 'City Center Plaza', 'Corporate Commons', 'The Apex Building'], sqft: [25000, 80000], units: [10, 50] },
-  Retail: { names: ['Riverwalk Shops', 'The Crossroads', 'Heritage Square', 'Parkside Pavilion', 'Market Street Center'], sqft: [15000, 50000], units: [5, 30] },
-  Industrial: { names: ['Keystone Logistics', 'Titan Warehouse', 'Gateway Distribution', 'Northpoint Industrial', 'Railhead Complex'], sqft: [50000, 200000], units: [1, 10] },
-  Healthcare: { names: ['Wellness Medical Campus', 'Orchard Health Center', 'City General Clinic', 'Lakeview Surgical', 'Preserve Medical'], sqft: [20000, 60000], units: [8, 40] }
+const PROPERTY_TYPES = {
+  Office:     { names: ['Metro Tower', 'Innovation Hub', 'City Center Plaza', 'Corporate Commons', 'The Apex Building', 'Lakefront Office Park', 'Pinnacle Suites'],      sqft: [25000, 80000],   units: [10, 50] },
+  Retail:     { names: ['Riverwalk Shops', 'The Crossroads', 'Heritage Square', 'Parkside Pavilion', 'Market Street Center', 'Shoppes at the Boulevard', 'Corner Market'], sqft: [15000, 50000],   units: [5,  30] },
+  Industrial: { names: ['Keystone Logistics', 'Titan Warehouse', 'Gateway Distribution', 'Northpoint Industrial', 'Railhead Complex', 'Iron Gate Facility'],               sqft: [50000, 200000],  units: [2,  12] },
+  Healthcare: { names: ['Wellness Medical Campus', 'Orchard Health Center', 'City General Clinic', 'Lakeview Surgical', 'Preserve Medical', 'Physicians Plaza'],           sqft: [20000, 60000],   units: [8,  40] },
 };
 
-const tenantData = {
-  Office: ['Innovate Inc.', 'Global Synergy', 'Quantum Analytics', 'Apex Financial', 'BrightPath'],
-  Retail: ['Urban Trends', 'Fresh Market', 'The Daily Grind', 'Artisan Corner', 'Style & Co.'],
-  Industrial: ['LogiCore', 'SupplyChain Solutions', 'ProHaul', 'Prime Distribution', 'BulkGoods Inc.'],
-  Healthcare: ['City General Dentistry', 'OrthoCare Specialists', 'Family Wellness Clinic', 'VisionFirst']
+const TENANT_NAMES = {
+  Office:     ['Innovate Inc.', 'Global Synergy', 'Quantum Analytics', 'Apex Financial', 'BrightPath Solutions', 'Meridian Consulting', 'Summit Strategy', 'CoreTech', 'NexGen Partners', 'BlueSky Ventures'],
+  Retail:     ['Urban Trends', 'Fresh Market', 'The Daily Grind', 'Artisan Corner', 'Style & Co.', 'Roast & Brew', 'Bloom Florist', 'Silver Thread Boutique', 'Peak Performance Sports', 'Corner Pharmacy'],
+  Industrial: ['LogiCore', 'SupplyChain Solutions', 'ProHaul', 'Prime Distribution', 'BulkGoods Inc.', 'FastFreight Co.', 'Precision Parts Mfg.'],
+  Healthcare: ['City General Dentistry', 'OrthoCare Specialists', 'Family Wellness Clinic', 'VisionFirst Optometry', 'Apex Physical Therapy', 'Northside Pediatrics'],
 };
 
-const citiesByState = {
-  MI: ['Southfield', 'Troy', 'Ann Arbor', 'Grand Rapids'],
-  IL: ['Naperville', 'Rosemont', 'Schaumburg', 'Oak Brook'],
-  GA: ['Marietta', 'Alpharetta', 'Sandy Springs', 'Decatur'],
-  CA: ['Santa Clara', 'Sunnyvale', 'Cupertino', 'Palo Alto'],
-  PA: ['King of Prussia', 'Bala Cynwyd', 'Wayne', 'Exton']
+const CITIES = {
+  MI: ['Detroit', 'Southfield', 'Troy', 'Ann Arbor', 'Grand Rapids', 'Lansing'],
+  IL: ['Chicago', 'Naperville', 'Rosemont', 'Schaumburg', 'Oak Brook', 'Evanston'],
+  GA: ['Atlanta', 'Marietta', 'Alpharetta', 'Sandy Springs', 'Decatur', 'Smyrna'],
+  CA: ['San Jose', 'Santa Clara', 'Sunnyvale', 'Cupertino', 'Palo Alto', 'Fremont'],
+  PA: ['Philadelphia', 'King of Prussia', 'Bala Cynwyd', 'Wayne', 'Exton', 'Malvern'],
 };
 
+// Payment profile weights by portfolio (makes each portfolio feel different)
+const PROFILE_WEIGHTS = {
+  'Midwest Commercial Properties LLC': { excellent: 3, good: 4, declining: 2, chronic: 2, delinquent: 1, defaulted: 1 },
+  'Great Lakes Retail Holdings':        { excellent: 2, good: 3, declining: 3, chronic: 3, delinquent: 2, defaulted: 1 },  // retail is rougher
+  'Sunbelt Logistics & Industrial':     { excellent: 4, good: 5, declining: 1, chronic: 1, delinquent: 1, defaulted: 0 },  // industrial tenants are reliable
+  'West Coast Tech Partners':           { excellent: 5, good: 4, declining: 2, chronic: 1, delinquent: 1, defaulted: 1 },  // mostly strong but some volatility
+  'Keystone Medical REIT':              { excellent: 6, good: 4, declining: 1, chronic: 1, delinquent: 0, defaulted: 0 },  // medical = very stable
+};
+
+const pickProfile = (portfolioName) => {
+  const weights = PROFILE_WEIGHTS[portfolioName] ?? { excellent: 3, good: 3, declining: 2, chronic: 1, delinquent: 1, defaulted: 0 };
+  const pool = [];
+  for (const [profile, weight] of Object.entries(weights)) {
+    for (let i = 0; i < weight; i++) pool.push(profile);
+  }
+  return pick(pool);
+};
+
+// ─── Main ──────────────────────────────────────────────────────────────────
 async function main() {
-  console.log('🌱 Starting large-scale RealSight seed...');
+  console.log('🌱 Seeding RealSight with 6 months of payment history...\n');
 
-  // Clean up existing data
   await prisma.payment.deleteMany();
   await prisma.lease.deleteMany();
   await prisma.tenant.deleteMany();
   await prisma.property.deleteMany();
   await prisma.metric.deleteMany();
   await prisma.portfolio.deleteMany();
-  console.log('🧹 Database cleaned.');
+  console.log('🧹 Cleared existing data\n');
 
-  for (const p of portfolioNames) {
+  for (const pd of PORTFOLIOS) {
     const portfolio = await prisma.portfolio.create({
-      data: {
-        name: p.name,
-        portfolio_hash: hashString(p.name),
-        owner_name: p.owner,
-        headquarters_city: p.city,
-        headquarters_state: p.state,
-        subscription_tier: 'Enterprise'
-      }
+      data: { name: pd.name, portfolio_hash: hashId(pd.name), owner_name: pd.owner, headquarters_city: pd.city, headquarters_state: pd.state, subscription_tier: pd.tier }
     });
+    console.log(`🏢 ${portfolio.name}`);
 
-    console.log(`\n🏢 Created portfolio: ${portfolio.name}`);
+    const numProperties = rndInt(12, 15);
+    const usedPropertyNames = new Set();
+    let portfolioPayments = [];
+    let portfolioTenantCount = 0;
+    let portfolioUnitCount = 0;
 
-    let allProperties = [];
-    let allTenants = [];
-    let allPayments = [];
-
-    const numProperties = getRandomInt(12, 15);
-    for (let i = 0; i < numProperties; i++) {
-      const propertyType = getRandomElement(Object.keys(propertyData));
-      const propTypeData = propertyData[propertyType];
+    for (let pi = 0; pi < numProperties; pi++) {
+      const propType = pick(Object.keys(PROPERTY_TYPES));
+      const typeData = PROPERTY_TYPES[propType];
       
+      // Unique property name per portfolio
+      let propName;
+      do { propName = `${pick(typeData.names)} — ${pick(CITIES[pd.state])}`; } while (usedPropertyNames.has(propName));
+      usedPropertyNames.add(propName);
+
+      const totalSqft = rndInt(typeData.sqft[0], typeData.sqft[1]);
+      const unitCount = rndInt(typeData.units[0], typeData.units[1]);
+
       const property = await prisma.property.create({
-        data: {
-          portfolio_id: portfolio.id,
-          name: `${getRandomElement(propTypeData.names)} - ${getRandomElement(citiesByState[p.state])}`,
-          city: getRandomElement(citiesByState[p.state]),
-          state: p.state,
-          zip_code: `${getRandomInt(10000, 99999)}`,
-          property_type: propertyType,
-          total_square_feet: getRandomInt(propTypeData.sqft[0], propTypeData.sqft[1]),
-          unit_count: getRandomInt(propTypeData.units[0], propTypeData.units[1])
-        }
+        data: { portfolio_id: portfolio.id, name: propName, city: pick(CITIES[pd.state]), state: pd.state, zip_code: `${rndInt(10000, 99999)}`, property_type: propType, total_square_feet: totalSqft, unit_count: unitCount }
       });
-      allProperties.push(property);
 
-      // Create tenants for this property
-      const occupancyRate = Math.random() * (0.95 - 0.8) + 0.8; // 80-95% occupancy
-      const numTenants = Math.floor(property.unit_count * occupancyRate);
+      portfolioUnitCount += unitCount;
 
-      for (let j = 0; j < numTenants; j++) {
-        const tenantName = `${getRandomElement(tenantData[propertyType])} #${j + 1}`;
+      // 80-95% occupancy — occupied units get tenants
+      const occupiedUnits = Math.floor(unitCount * (0.80 + Math.random() * 0.15));
+      const usedTenantNames = new Set();
+
+      for (let ti = 0; ti < occupiedUnits; ti++) {
+        let tenantName;
+        const namePool = TENANT_NAMES[propType];
+        do { tenantName = `${pick(namePool)} #${rndInt(1, 99)}`; } while (usedTenantNames.has(tenantName));
+        usedTenantNames.add(tenantName);
+
+        const creditRating = pick(['A+', 'A', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C']);
+        const monthlyRent  = rndInt(8, 45) * 1000; // $8k–$45k
+        const profile      = pickProfile(pd.name);
+
         const tenant = await prisma.tenant.create({
           data: {
             property_id: property.id,
             business_name: tenantName,
-            tenant_hash: hashString(`${property.id}-${tenantName}`),
-            business_type: propertyType,
-            contact_email: `contact@${tenantName.toLowerCase().replace(/\s+/g, '')}.com`,
-            credit_rating: getRandomElement(['A+', 'A', 'A-', 'B+', 'B', 'C+'])
+            tenant_hash: hashId(`${property.id}-${tenantName}`),
+            business_type: propType,
+            contact_email: `billing@${tenantName.toLowerCase().replace(/[^a-z]/g, '')}.com`,
+            credit_rating: creditRating,
           }
         });
 
-        const lease = await prisma.lease.create({
+        await prisma.lease.create({
           data: {
             tenant_id: tenant.id,
             property_id: property.id,
-            lease_start_date: getRandomDate(new Date('2020-01-01'), new Date('2025-01-01')),
-            lease_end_date: getRandomDate(new Date('2028-01-01'), new Date('2035-01-01')),
-            monthly_rent: getRandomInt(15, 40) * 1000 // $15k - $40k rent
+            lease_start_date: new Date(Date.now() - rndInt(365, 1825) * 86400000), // 1-5 years ago
+            lease_end_date:   new Date(Date.now() + rndInt(180, 2555) * 86400000), // 6mo - 7yr from now
+            monthly_rent: monthlyRent,
           }
         });
 
-        // Create a payment record for the current month
-        const paymentRoll = Math.random();
-        let payment_status, amount_paid, days_past_due;
-
-        if (paymentRoll > 0.7) { // 70% paid
-          payment_status = 'paid';
-          amount_paid = lease.monthly_rent;
-          days_past_due = 0;
-        } else if (paymentRoll > 0.4) { // 30% partial
-          payment_status = 'partial';
-          amount_paid = lease.monthly_rent * (Math.random() * (0.8 - 0.2) + 0.2); // 20-80% paid
-          days_past_due = getRandomInt(5, 25);
-        } else if (paymentRoll > 0.2) { // 20% delinquent
-          payment_status = 'delinquent';
-          amount_paid = 0;
-          days_past_due = getRandomInt(31, 60);
-        } else { // 10% defaulted
-          payment_status = 'defaulted';
-          amount_paid = lease.monthly_rent * (Math.random() * 0.1); // <10% paid
-          days_past_due = getRandomInt(61, 120);
+        // 6 months of payment history
+        const history = buildPaymentHistory(tenant.id, property.id, monthlyRent, profile);
+        for (const record of history) {
+          await prisma.payment.create({ data: record });
         }
-        
-        const payment = await prisma.payment.create({
-          data: {
-            time: new Date(),
-            property_id: property.id,
-            tenant_id: tenant.id,
-            amount_due: lease.monthly_rent,
-            amount_paid: Math.round(amount_paid),
-            payment_status,
-            days_past_due
-          }
-        });
-        allPayments.push({ ...payment, lease });
-        allTenants.push(tenant);
+
+        portfolioPayments.push(...history);
+        portfolioTenantCount++;
       }
     }
-    console.log(`  -> 🏠 Created ${allProperties.length} properties`);
-    console.log(`  -> 👥 Created ${allTenants.length} tenants`);
 
-    // --- Calculate and Create Portfolio Metrics ---
-    const totalRentDue = allPayments.reduce((sum, p) => sum + p.amount_due, 0);
-    const totalRentPaid = allPayments.reduce((sum, p) => sum + p.amount_paid, 0);
-    const problemTenants = allPayments.filter(p => ['partial', 'delinquent', 'defaulted'].includes(p.payment_status));
-    const totalUnits = allProperties.reduce((sum, p) => sum + p.unit_count, 0);
+    // ── Calculate aggregate portfolio metrics from actual seeded data ──────
+    // Use only the most recent month's payments for current-state metrics
+    const currentMonthPayments = portfolioPayments.filter(p => {
+      const cutoff = monthStart(1); // start of last month
+      return p.time >= cutoff;
+    });
 
-    const metrics = [
-      { metric_name: 'rent_collection_rate', metric_value: totalRentDue > 0 ? (totalRentPaid / totalRentDue) * 100 : 100, unit: '%' },
-      { metric_name: 'occupancy_rate', metric_value: totalUnits > 0 ? (allTenants.length / totalUnits) * 100 : 100, unit: '%' },
-      { metric_name: 'outstanding_debt', metric_value: totalRentDue - totalRentPaid, unit: '$' },
-      { metric_name: 'avg_days_past_due', metric_value: problemTenants.length > 0 ? problemTenants.reduce((sum, p) => sum + p.days_past_due, 0) / problemTenants.length : 0, unit: 'days' },
-      { metric_name: 'monthly_revenue', metric_value: totalRentPaid, unit: '$' },
-      { metric_name: 'problem_tenants_count', metric_value: problemTenants.length, unit: 'count' },
-      { metric_name: 'active_alerts', metric_value: problemTenants.length, unit: 'count' },
-      { metric_name: 'noi_margin', metric_value: getRandomInt(25, 65), unit: '%' }
+    const totalDue    = currentMonthPayments.reduce((s, p) => s + p.amount_due, 0);
+    const totalPaid   = currentMonthPayments.reduce((s, p) => s + p.amount_paid, 0);
+    const latePmts    = currentMonthPayments.filter(p => p.days_past_due > 0);
+    const problemPmts = currentMonthPayments.filter(p => ['partial', 'delinquent', 'defaulted'].includes(p.payment_status));
+
+    const collectionRate  = totalDue > 0 ? (totalPaid / totalDue) * 100 : 100;
+    const occupancyRate   = portfolioUnitCount > 0 ? (portfolioTenantCount / portfolioUnitCount) * 100 : 0;
+    const avgDaysPastDue  = latePmts.length > 0 ? latePmts.reduce((s, p) => s + p.days_past_due, 0) / latePmts.length : 0;
+    const outstandingDebt = Math.max(0, totalDue - totalPaid);
+    const noiMargin       = 65; // estimated — 65% NOI margin typical for well-run commercial
+
+    const metricsToSeed = [
+      { metric_name: 'rent_collection_rate',   metric_value: parseFloat(collectionRate.toFixed(2)),  unit: '%' },
+      { metric_name: 'occupancy_rate',         metric_value: parseFloat(occupancyRate.toFixed(2)),   unit: '%' },
+      { metric_name: 'outstanding_debt',       metric_value: parseFloat(outstandingDebt.toFixed(2)), unit: '$' },
+      { metric_name: 'avg_days_past_due',      metric_value: parseFloat(avgDaysPastDue.toFixed(2)),  unit: 'days' },
+      { metric_name: 'monthly_revenue',        metric_value: parseFloat(totalPaid.toFixed(2)),        unit: '$' },
+      { metric_name: 'problem_tenants_count',  metric_value: problemPmts.length,                     unit: 'count' },
+      { metric_name: 'active_alerts',          metric_value: problemPmts.length,                     unit: 'count' },
+      { metric_name: 'noi_margin',             metric_value: noiMargin,                               unit: '%' },
+      { metric_name: 'total_units',            metric_value: portfolioUnitCount,                      unit: 'count' },
+      { metric_name: 'occupied_units',         metric_value: portfolioTenantCount,                    unit: 'count' },
     ];
 
-    for (const m of metrics) {
+    // Seed per-month metrics for trend charts (6 months)
+    for (let monthsAgo = 5; monthsAgo >= 0; monthsAgo--) {
+      const monthPayments = portfolioPayments.filter(p => {
+        const mStart = monthStart(monthsAgo + 1);
+        const mEnd   = monthStart(monthsAgo);
+        return p.time >= mStart && p.time < mEnd;
+      });
+      if (!monthPayments.length) continue;
+
+      const mDue    = monthPayments.reduce((s, p) => s + p.amount_due, 0);
+      const mPaid   = monthPayments.reduce((s, p) => s + p.amount_paid, 0);
+      const mRate   = mDue > 0 ? (mPaid / mDue) * 100 : 100;
+      const mDate   = monthStart(monthsAgo);
+
       await prisma.metric.create({
-        data: {
-          portfolio_id: portfolio.id,
-          metric_date: new Date(),
-          metric_name: m.metric_name,
-          metric_value: parseFloat(m.metric_value.toFixed(2)),
-          unit: m.unit
-        }
+        data: { portfolio_id: portfolio.id, metric_date: mDate, metric_name: 'monthly_collection_rate', metric_value: parseFloat(mRate.toFixed(2)), unit: '%' }
+      });
+      await prisma.metric.create({
+        data: { portfolio_id: portfolio.id, metric_date: mDate, metric_name: 'monthly_revenue', metric_value: parseFloat(mPaid.toFixed(2)), unit: '$' }
+      });
+      await prisma.metric.create({
+        data: { portfolio_id: portfolio.id, metric_date: mDate, metric_name: 'monthly_outstanding', metric_value: parseFloat(Math.max(0, mDue - mPaid).toFixed(2)), unit: '$' }
       });
     }
-    console.log(`  -> 📈 Created ${metrics.length} calculated portfolio metrics`);
+
+    // Seed current-state summary metrics
+    for (const m of metricsToSeed) {
+      await prisma.metric.create({
+        data: { portfolio_id: portfolio.id, metric_date: monthStart(0), metric_name: m.metric_name, metric_value: m.metric_value, unit: m.unit }
+      });
+    }
+
+    console.log(`   🏠 ${numProperties} properties  👥 ${portfolioTenantCount} tenants  📊 ${portfolioPayments.length} payment records`);
   }
-  
-  console.log('\n🎉 RealSight large-scale seeding complete!');
+
+  console.log('\n🎉 Seeding complete — 6 months of payment history ready for trend charts');
 }
 
 main()
-  .catch((e) => {
-    console.error('❌ Seeding error:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+  .catch(e => { console.error('❌ Seed error:', e); process.exit(1); })
+  .finally(() => prisma.$disconnect());
