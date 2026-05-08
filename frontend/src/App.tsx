@@ -3,6 +3,7 @@ import { useRealSightStore } from './store/useRealSightStore';
 import { PortfolioPropertySelector } from './components/PortfolioPropertySelector';
 import { TenantFinancialsTable } from './components/TenantFinancialsTable';
 import { OverviewTab } from './components/tabs/OverviewTab';
+import { PortfolioPerformanceTab } from './components/tabs/PortfolioPerformanceTab';
 
 function App() {
   const [activeTab, setActiveTab] = useState<'overview' | 'tenant-financials' | 'portfolio-performance' | 'acquisition'>('overview');
@@ -83,14 +84,7 @@ function App() {
           <TenantFinancialsTable />
         )}
         
-        {activeTab === 'portfolio-performance' && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-white mb-4">Portfolio Performance</h2>
-            <div className="bg-slate-900/50 rounded-lg p-8 border border-slate-800 text-center">
-              <p className="text-slate-400">Portfolio performance analytics coming soon...</p>
-            </div>
-          </div>
-        )}
+        {activeTab === 'portfolio-performance' && <PortfolioPerformanceTab />}
         
         {activeTab === 'acquisition' && (
           <div className="space-y-6">

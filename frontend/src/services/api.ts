@@ -3,6 +3,37 @@ import { mockPortfolios, getPropertiesByPortfolio as getMockProperties, getTenan
 
 const API_BASE_URL = 'https://realsight-app-production.up.railway.app/api';
 
+export interface PortfolioMetric {
+  id: string;
+  portfolio_id: string;
+  metric_date: string;
+  metric_name: string;
+  metric_value: number;
+  unit: string;
+}
+
+export interface PropertyPerformance {
+  id: string;
+  name: string;
+  property_type: string;
+  city: string;
+  state: string;
+  total_square_feet: number;
+  unit_count: number;
+  occupied_units: number;
+  occupancy_rate: number;
+  total_due: number;
+  total_paid: number;
+  collection_rate: number;
+  outstanding: number;
+  revenue_per_sqft: number;
+  estimated_noi: number;
+  problem_tenants: number;
+  avg_days_past_due: number;
+  tenant_count: number;
+  monthly_revenue_trend: number[];
+}
+
 export const getPortfolios = async (): Promise<Portfolio[]> => {
   try {
     console.log('🔄 Fetching portfolios from backend...');
@@ -61,6 +92,28 @@ export const getTenantsByProperty = async (propertyId: string): Promise<Tenant[]
   } catch (error) {
     console.error('❌ Tenants by property fallback to mock:', error);
     return getMockTenants(propertyId);
+  }
+};
+
+export const getPortfolioMetrics = async (portfolioId: string): Promise<PortfolioMetric[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/metrics?portfolio_id=${portfolioId}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.error('❌ Metrics fetch failed:', error);
+    return [];
+  }
+};
+
+export const getPropertyPerformance = async (portfolioId: string): Promise<PropertyPerformance[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/properties/performance?portfolio_id=${portfolioId}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.error('❌ Property performance fetch failed:', error);
+    return [];
   }
 };
 
