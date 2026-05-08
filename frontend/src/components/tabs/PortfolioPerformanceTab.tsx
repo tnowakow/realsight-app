@@ -95,7 +95,7 @@ const PropertyTenantDetail = ({ tenants, propertyId }: { tenants: Tenant[]; prop
               {property.city}, {property.state} · {property.property_type}
             </p>
             <div className="flex gap-4 mt-3 text-xs text-slate-500">
-              <span>{(property.total_square_feet ?? 0).toLocaleString()} sqft</span></span>
+              <span>{(property.total_square_feet ?? 0).toLocaleString()} sqft</span>
               <span>·</span>
               <span>{tenantData.length} tenants</span>
               <span>·</span>
