@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { PrismaClient } = require('@prisma/client');
+const dateUtils = require('./src/utils/dateUtils');
 
 const prisma = new PrismaClient();
 const app = express();
@@ -95,12 +96,22 @@ app.get('/api/properties/performance', async (req, res) => {
 
       tenants.forEach(t => {
         const lease = t.leases[0];
-        // Most recent payment regardless of month (seed data uses monthStart dates)
+        // Most recent payment (current month)
         const currentPmt = t.payments[0];
         if (lease) totalDue += lease.monthly_rent;
         if (currentPmt) {
           totalPaid += currentPmt.amount_paid;
-          if (currentPmt.days_past_due > 0) { totalDaysPastDue += currentPmt.days_past_due; lateTenantCount++; }
+          
+          // DYNAMIC: Calculate days_past_due based on current viewing date
+          const dynamicDaysPastDue = dateUtils.calculateDaysPastDue(
+            new Date(currentPmt.time), 
+            currentPmt.payment_status
+          );
+          
+          if (dynamicDaysPastDue > 0) { 
+            totalDaysPastDue += dynamicDaysPastDue; 
+            lateTenantCount++; 
+          }
           if (['partial', 'delinquent', 'defaulted'].includes(currentPmt.payment_status)) problemCount++;
         }
       });
@@ -150,7 +161,38 @@ app.get('/api/properties/:id', async (req, res) => {
       include: { tenants: { include: { leases: true, payments: true } } }
     });
     if (!property) return res.status(404).json({ error: 'Property not found' });
-    res.json(property);
+    
+    // DYNAMIC: Enrich tenant data with calculated days_past_due
+    const enrichedTenants = property.tenants.map(tenant => {
+      const currentPayment = tenant.payments[0] || null;
+      let enrichedPayment = null;
+      
+      if (currentPayment) {
+        enrichedPayment = {
+          ...currentPayment,
+          // Add dynamically calculated days_past_due for display
+          _calculated_days_past_due: dateUtils.calculateDaysPastDue(
+            new Date(currentPayment.time), 
+            currentPayment.payment_status
+          )
+        };
+      }
+      
+      return {
+        ...tenant,
+        lease: tenant.leases[0] || null,
+        currentPayment: enrichedPayment,
+        payments: tenant.payments.map(p => ({
+          ...p,
+          _calculated_days_past_due: dateUtils.calculateDaysPastDue(
+            new Date(p.time), 
+            p.payment_status
+          )
+        }))
+      };
+    });
+
+    res.json({ ...property, tenants: enrichedTenants });
   } catch (err) {
     console.error('GET /api/properties/:id error:', err);
     res.status(500).json({ error: 'Failed to fetch property' });
@@ -175,7 +217,23 @@ app.get('/api/tenants', async (req, res) => {
       const enriched = tenants.map(t => {
         const lease = t.leases[0] || null;
         const currentPayment = t.payments[0] || null;
-        return { ...t, lease, currentPayment,
+        
+        // DYNAMIC: Calculate days_past_due for display
+        let enrichedPayment = null;
+        if (currentPayment) {
+          enrichedPayment = {
+            ...currentPayment,
+            _calculated_days_past_due: dateUtils.calculateDaysPastDue(
+              new Date(currentPayment.time), 
+              currentPayment.payment_status
+            )
+          };
+        }
+
+        return { 
+          ...t, 
+          lease, 
+          currentPayment: enrichedPayment,
           outstanding_balance: t.payments.reduce((s, p) => s + Math.max(0, p.amount_due - p.amount_paid), 0),
           total_paid: t.payments.reduce((s, p) => s + p.amount_paid, 0),
           total_due: t.payments.reduce((s, p) => s + p.amount_due, 0)
@@ -198,10 +256,23 @@ app.get('/api/tenants', async (req, res) => {
       const lease = t.leases[0] || null;
       const currentPayment = t.payments[0] || null;
       const outstanding = t.payments.reduce((sum, p) => sum + Math.max(0, p.amount_due - p.amount_paid), 0);
+      
+      // DYNAMIC: Calculate days_past_due for display
+      let enrichedPayment = null;
+      if (currentPayment) {
+        enrichedPayment = {
+          ...currentPayment,
+          _calculated_days_past_due: dateUtils.calculateDaysPastDue(
+            new Date(currentPayment.time), 
+            currentPayment.payment_status
+          )
+        };
+      }
+
       return {
         ...t,
         lease,
-        currentPayment,
+        currentPayment: enrichedPayment,
         outstanding_balance: outstanding,
         total_paid: t.payments.reduce((sum, p) => sum + p.amount_paid, 0),
         total_due: t.payments.reduce((sum, p) => sum + p.amount_due, 0)
@@ -222,9 +293,23 @@ app.get('/api/tenants/:id', async (req, res) => {
       include: { leases: true, payments: { orderBy: { time: 'desc' } } }
     });
     if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
+    
     const lease = tenant.leases[0] || null;
     const currentPayment = tenant.payments[0] || null;
-    res.json({ ...tenant, lease, currentPayment });
+    
+    // DYNAMIC: Calculate days_past_due for display
+    let enrichedPayment = null;
+    if (currentPayment) {
+      enrichedPayment = {
+        ...currentPayment,
+        _calculated_days_past_due: dateUtils.calculateDaysPastDue(
+          new Date(currentPayment.time), 
+          currentPayment.payment_status
+        )
+      };
+    }
+
+    res.json({ ...tenant, lease, currentPayment: enrichedPayment });
   } catch (err) {
     console.error('GET /api/tenants/:id error:', err);
     res.status(500).json({ error: 'Failed to fetch tenant' });

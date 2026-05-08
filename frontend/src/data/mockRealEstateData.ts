@@ -1,5 +1,40 @@
 import type { Portfolio, Property, Tenant } from '../store/useRealSightStore';
 
+/**
+ * Calculate days past due dynamically based on current date
+ * Rent is typically due on the 1st of each month with a grace period until the 5th
+ */
+export const calculateDaysPastDue = (paymentDate: string | Date): number => {
+  const now = new Date();
+  const payment = new Date(paymentDate);
+  
+  // Get current month and year
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  
+  // Rent is due on the 1st, grace period until 5th
+  const rentDueDate = new Date(currentYear, currentMonth, 1);
+  const gracePeriodEnd = new Date(currentYear, currentMonth, 5);
+  
+  // If payment was made within grace period or earlier this month, not past due
+  if (payment >= gracePeriodEnd || (payment.getMonth() === currentMonth && payment.getFullYear() === currentYear)) {
+    return 0;
+  }
+  
+  // Calculate days since rent was due (1st of current month)
+  const diffTime = Math.abs(now.getTime() - rentDueDate.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  return diffDays;
+};
+
+/**
+ * Get the current viewing date for dynamic calculations
+ */
+export const getCurrentViewingDate = (): Date => {
+  return new Date();
+};
+
 // Mock portfolios (holding companies)
 export const mockPortfolios: Portfolio[] = [
   {

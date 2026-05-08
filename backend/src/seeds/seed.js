@@ -25,6 +25,9 @@ const monthStart = (monthsAgo) => {
  *   'chronic'    — consistently partial/late every month
  *   'delinquent' — 2-3 months paid then stopped
  *   'defaulted'  — stopped paying 4+ months ago, now defaulted
+ *
+ * NOTE: days_past_due is calculated dynamically at query time based on current date.
+ * The stored value represents the payment behavior pattern, not absolute staleness.
  */
 const buildPaymentHistory = (tenantId, propertyId, monthlyRent, profile) => {
   const records = [];
@@ -37,13 +40,13 @@ const buildPaymentHistory = (tenantId, propertyId, monthlyRent, profile) => {
       case 'excellent':
         amount_paid    = monthlyRent;
         payment_status = 'paid';
-        days_past_due  = 0;
+        days_past_due  = 0; // Always on time
         break;
 
       case 'good':
         amount_paid    = monthlyRent;
         payment_status = 'paid';
-        days_past_due  = Math.random() < 0.15 ? rndInt(1, 5) : 0;
+        days_past_due  = Math.random() < 0.15 ? rndInt(1, 5) : 0; // Occasional minor delay
         break;
 
       case 'declining': {
@@ -64,28 +67,32 @@ const buildPaymentHistory = (tenantId, propertyId, monthlyRent, profile) => {
       }
 
       case 'chronic':
+        // Chronic late payers - always 10-35 days behind, partial payments
         days_past_due  = rndInt(10, 35);
         amount_paid    = Math.round(monthlyRent * (0.4 + Math.random() * 0.4)); // 40-80%
         payment_status = days_past_due > 20 ? 'delinquent' : 'partial';
         break;
 
       case 'delinquent':
-        // Paid months 5-3, stopped months 2-0
+        // Paid months 5-3, stopped months 2-0 - current month accumulates days past due dynamically
         if (monthsAgo >= 3) {
           amount_paid = monthlyRent; payment_status = 'paid'; days_past_due = 0;
         } else {
-          days_past_due  = rndInt(30, 60) + (2 - monthsAgo) * 15;
+          // For recent months, store a base delay that will be calculated dynamically at query time
+          const baseDelay = rndInt(30, 60);
+          days_past_due  = baseDelay + (2 - monthsAgo) * 15; // Increases as we get closer to current month
           amount_paid    = 0;
           payment_status = 'delinquent';
         }
         break;
 
       case 'defaulted':
-        // Paid months 5-4, then stopped and defaulted
+        // Paid months 5-4, then stopped and defaulted - current state is severely delinquent
         if (monthsAgo >= 4) {
           amount_paid = monthlyRent; payment_status = 'paid'; days_past_due = 0;
         } else {
-          days_past_due  = rndInt(60, 90) + (3 - monthsAgo) * 20;
+          const baseDelay = rndInt(60, 90);
+          days_past_due  = baseDelay + (3 - monthsAgo) * 20; // Increases toward current month
           amount_paid    = monthsAgo === 3 ? Math.round(monthlyRent * 0.25) : 0;
           payment_status = 'defaulted';
         }

@@ -15,7 +15,7 @@
 
 ---
 
-## Phase 1: Industry Research & KPI Definition (CURRENT PHASE)
+## Phase 1: Industry Research & KPI Definition (COMPLETED ✅)
 
 ### Primary Research Questions
 
@@ -71,7 +71,7 @@ Must include:
 
 ---
 
-## Phase 2: Technical Architecture & Code Reuse Analysis
+## Phase 2: Technical Architecture & Code Reuse Analysis (COMPLETED ✅)
 
 ### Vitaly (Technical Architect) Tasks
 
@@ -104,7 +104,7 @@ Must include:
 
 ---
 
-## Phase 3: Seed Data & Demo Scenarios
+## Phase 3: Seed Data & Demo Scenarios (CURRENT PHASE)
 
 ### JayJay + Marcus Tasks
 
@@ -127,7 +127,7 @@ Create 18-20 distinct property portfolio scenarios similar to Dentsight's 10 den
 Must include:
 1. Detailed profiles for 8-10 property portfolios
 2. Specific metrics and pain points for each scenario
-3. Sample tenant data (names, payment histories, lease terms)
+3. Sample tenant data (names, payment histories, lease terms) designed to dynamically calculate time-sensitive metrics (e.g., 'days past due', 'lease expiration countdown') relative to the current system date.
 4. Property details (locations, unit counts, square footage, rental rates)
 
 ---
@@ -138,14 +138,14 @@ Must include:
 
 **Backend (Marcus):**
 - Implement database schema from Phase 2
-- Create API endpoints for property/tenant data
+- Create API endpoints for property/tenant data, ensuring all time-sensitive data (e.g., payment due dates, lease terms) can be queried and calculated dynamically based on the current date.
 - Build seed data loader for demo scenarios
 - Integrate AI recommendation engine (adapted from Dentsight)
 
 **Frontend (Maya):**
 - Reuse Dentsight components where applicable
 - Build property portfolio selector
-- Implement KPI dashboards for each metric category
+- Implement KPI dashboards for each metric category, ensuring all time-sensitive data points (e.g., 'Days Past Due', 'Lease Expiration Schedule') dynamically update relative to the current viewing date.
 - Create tenant payment tracking views
 - Design acquisition target highlighting
 
@@ -181,7 +181,7 @@ Must include:
 1. All 8-10 portfolio scenarios load correctly with distinct data
 2. Tenant payment tracking shows late payers prominently (Tom's priority)
 3. Portfolio selector works smoothly (like Dentsight company selector)
-4. KPIs are industry-relevant and benchmarks are accurate
+4. KPIs are industry-relevant and benchmarks are accurate, with all time-sensitive data dynamically adjusting to the current viewing date.
 5. Acquisition targets are clearly identified and justified
 6. Application deploys successfully to Railway
 7. Demo script created for sales/pitch use
@@ -192,9 +192,6 @@ Must include:
 
 **Immediate Action Required:**
 1. ✅ Project brief created (this file)
-2. ⏳ **JayJay: Begin industry research on property management KPIs**
-3. ⏳ Vitaly: Review Dentsight codebase for reuse opportunities
-4. ⏳ Team standup to align on approach
 
 **Target Completion:** 7-10 days from research start
 

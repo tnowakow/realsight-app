@@ -101,28 +101,28 @@ Commercial property owners prioritize metrics that directly impact cash flow, as
 
 Benchmarks can vary significantly by market, property type, and economic conditions. These are general targets:
 
-| KPI                                   | Typical Target/Benchmark           | Good vs. Bad                                                                 |
+| KPI | Typical Target/Benchmark | Good vs. Bad |
 | :------------------------------------ | :--------------------------------- | :--------------------------------------------------------------------------- |
-| **Rent Collection Rate**              | >95% (ideally 98-100%)             | **Good:** >95%. **Bad:** <90% indicates significant cash flow issues.        |
-| **Days Past Due Distribution**        | Low numbers in >30 days categories | **Good:** Most payments collected within 1-15 days. **Bad:** High volume in >30/60/90 days. |
-| **Total Outstanding by Tenant**       | Minimal per tenant                 | **Good:** Few tenants with significant outstanding balances. **Bad:** Many tenants with large, old debts. |
-| **Chronic Late Payers**               | As close to 0 as possible          | **Good:** Rare instances. **Bad:** Recurring pattern with multiple tenants.  |
-| **Occupancy Rate**                    | 90-95% (urban often 95-96%)        | **Good:** >90-95%. **Bad:** <85% suggests market issues or property problems. |
-| **Vacancy Rate**                      | <10% (ideally 4-5%)                | **Good:** <5%. **Bad:** >15% is a significant revenue drain.                 |
-| **Net Operating Income (NOI)**        | Varies widely by asset type/market | **Good:** Consistent growth, high relative to property value. **Bad:** Declining or low relative to peers. |
-| **Capitalization Rate (Cap Rate)**    | 5-10% (market dependent)           | **Good:** Attractive relative to market. **Bad:** Too low (poor return) or too high (high risk). |
-| **Rental Income per Square Foot**     | Maximized for market               | **Good:** Above market average. **Bad:** Below market average indicates underperforming asset. |
-| **Tenant Retention Rate**             | >70% (ideally 80%+)                | **Good:** >75%. **Bad:** <60% suggests tenant dissatisfaction or aggressive market. |
-| **Average Time to Fill Vacancy**      | <30-60 days                        | **Good:** <30 days. **Bad:** >90 days means significant lost income.         |
-| **Maintenance Cost per Unit/SqFt**    | Optimized for property age/type    | **Good:** Stable, predictable costs. **Bad:** Spiking or high relative to similar properties. |
-| **Operating Expense Ratio (OER)**     | 30-40%                             | **Good:** 30-35%. **Bad:** >50% signals inefficient operations.             |
-| **Debt Service Coverage Ratio (DSCR)**| >1.25 (lender requirement)         | **Good:** >1.35. **Bad:** <1.20 indicates high financial risk.              |
-| **Late Fee Collection Rate**          | >80% (ideally 90-100%)             | **Good:** >85%. **Bad:** <70% means fees are not being enforced effectively. |
-| **Average Days to Collect Past-Due**  | <15-30 days                        | **Good:** <15 days. **Bad:** >45 days implies weak collection process.      |
-| **Lease Expiration Schedule**         | Diversified, few large blocks      | **Good:** Staggered lease expirations. **Bad:** Large portion expiring simultaneously (high re-leasing risk). |
-| **Utility Cost per Unit/SqFt**        | Optimized, trending down           | **Good:** Stable or decreasing. **Bad:** Increasing without clear justification. |
-| **Tenant Concentration Risk**         | <20% from single tenant            | **Good:** Diversified tenant base. **Bad:** >30% from one tenant is high risk. |
-| **Property Appreciation/Depreciation**| Positive appreciation              | **Good:** Consistent positive growth. **Bad:** Consistent depreciation or stagnant. |
+| **Rent Collection Rate** | >95% (ideally 98-100%) | **Good:** >95%. **Bad:** <90% indicates significant cash flow issues. |
+| **Days Past Due Distribution** | Low numbers in >30 days categories | **Good:** Most payments collected within 1-15 days. **Bad:** High volume in >30/60/90 days. |
+| **Total Outstanding by Tenant** | Minimal per tenant | **Good:** Few tenants with significant outstanding balances. **Bad:** Many tenants with large, old debts. |
+| **Chronic Late Payers** | As close to 0 as possible | **Good:** Rare instances. **Bad:** Recurring pattern with multiple tenants. |
+| **Occupancy Rate** | 90-95% (urban often 95-96%) | **Good:** >90-95%. **Bad:** <85% suggests market issues or property problems. |
+| **Vacancy Rate** | <10% (ideally 4-5%) | **Good:** <5%. **Bad:** >15% is a significant revenue drain. |
+| **Net Operating Income (NOI)** | Varies widely by asset type/market | **Good:** Consistent growth, high relative to property value. **Bad:** Declining or low relative to peers. |
+| **Capitalization Rate (Cap Rate)** | 5-10% (market dependent) | **Good:** Attractive relative to market. **Bad:** Too low (poor return) or too high (high risk). |
+| **Rental Income per Square Foot** | Maximized for market | **Good:** Above market average. **Bad:** Below market average indicates underperforming asset. |
+| **Tenant Retention Rate** | >70% (ideally 80%+) | **Good:** >75%. **Bad:** <60% suggests tenant dissatisfaction or aggressive market. |
+| **Average Time to Fill Vacancy** | <30-60 days | **Good:** <30 days. **Bad:** >90 days means significant lost income. |
+| **Maintenance Cost per Unit/SqFt** | Optimized for property age/type | **Good:** Stable, predictable costs. **Bad:** Spiking or high relative to similar properties. |
+| **Operating Expense Ratio (OER)** | 30-40% | **Good:** 30-35%. **Bad:** >50% signals inefficient operations. |
+| **Debt Service Coverage Ratio (DSCR)**| >1.25 (lender requirement) | **Good:** >1.35. **Bad:** <1.20 indicates high financial risk. |
+| **Late Fee Collection Rate** | >80% (ideally 90-100%) | **Good:** >85%. **Bad:** <70% means fees are not being enforced effectively. |
+| **Average Days to Collect Past-Due** | <15-30 days | **Good:** <15 days. **Bad:** >45 days implies weak collection process. |
+| **Lease Expiration Schedule** | Diversified, few large blocks | **Good:** Staggered lease expirations. **Bad:** Large portion expiring simultaneously (high re-leasing risk). |
+| **Utility Cost per Unit/SqFt** | Optimized, trending down | **Good:** Stable or decreasing. **Bad:** Increasing without clear justification. |
+| **Tenant Concentration Risk** | <20% from single tenant | **Good:** Diversified tenant base. **Bad:** >30% from one tenant is high risk. |
+| **Property Appreciation/Depreciation**| Positive appreciation | **Good:** Consistent positive growth. **Bad:** Consistent depreciation or stagnant. |
 
 ---
 
@@ -297,3 +297,137 @@ Each sub-metric within a category is assigned a score (e.g., 1-5). These are the
 *   Written for Maya (frontend) and Marcus (backend) to use for app building.
 
 This research document provides a solid foundation for the RealSight project's Phase 1, detailing the crucial aspects of commercial property management that the platform needs to address. Maya can use the dashboard recommendations for frontend UI design, and Marcus can use the KPIs and data sources to inform backend data models and API design.
+
+---
+<!-- NEW ACQUISITION RESEARCH GO BELOW THIS LINE -->
+### JayJay's Research on CRE Acquisition Strategies and KPIs (2026-05-08)
+
+This section provides an in-depth look at how commercial real estate professionals identify potential acquisition targets and the key performance indicators they use for evaluation.
+
+#### **1. Identifying Potential Acquisition Targets**
+
+Commercial real estate professionals employ a multi-faceted approach to identify potential acquisition targets, focusing on both on-market and off-market opportunities.
+
+**Methods and Strategies:**
+
+*   **Networking and Relationships:** Building strong connections with local real estate agents, commercial brokers, property managers, appraisers, attorneys, accountants, and other investors is crucial for gaining insider access to unlisted ("pocket") deals and off-market opportunities.
+*   **Direct Outreach and Marketing:** Targeted direct marketing campaigns via mail or email, cold-calling, or even door-knocking property owners are used to unearth off-market deals.
+*   **Online Real Estate Platforms and Databases:** Specialized platforms like CoStar, LoopNet, CREXi, CityFeet, Reonomy, and Trepp are leveraged for finding listed properties and accessing extensive market intelligence, sales and lease comparables, vacancy rates, and ownership data.
+*   **Market Research and "Neighborhood Farming":** Thorough market research helps identify target niches and geographic areas. "Neighborhood farming" involves targeting specific areas through direct mail, driving for dollars, and other hyperlocal marketing to spot off-market deals and understand the local landscape.
+*   **Identifying Motivated Sellers:** Professionals look for owners facing situations that might compel them to sell quickly, such as high vacancies, deferred maintenance, or strained partnerships.
+*   **Capitalizing on "Broken Auctions":** These occur when a buyer fails to close a deal, presenting opportunities for new buyers to transact quickly.
+*   **Public Records:** Checking public records at the local tax assessor's office or county clerk's office can reveal property ownership, sale dates, prices, and other essential details, even for properties not officially listed.
+*   **Defining Clear Investment Criteria:** Before searching, investors define their goals (e.g., high rental yields, long-term capital growth), specifying property type, location, tenant profile, budget, and desired capitalization rates.
+*   **Comprehensive Market and Submarket Analysis:** Evaluating the chosen geographic location for strong population growth, job growth, favorable supply and demand characteristics, and key market drivers.
+*   **Focusing on Value-Add or Undervalued Opportunities:** Strategically seeking distressed or undervalued properties where improvements or repositioning can increase value and returns.
+
+**Key Data Sources:**
+
+*   **Commercial Real Estate Databases:** CoStar, LoopNet, CREXi, CityFeet, CRED iQ, Reonomy, Trepp, Yardi Matrix, CompStak, Real Capital Analytics (RCA).
+*   **Public Records:** Local government offices (tax assessor, county clerk) for property ownership, transfers, liens, and property taxes.
+*   **Proprietary Databases and CRM Systems:** Internal databases and CRM software to manage leads and deals.
+*   **Demographic and Economic Data:** Census Bureau, economic forecasts, and specialized tools for population growth, job growth, and income trajectories.
+*   **Market Reports and Industry Publications:** Local business journals, trade groups, and market commentaries for insights into tenant dynamics, pricing trends, and sector-specific trends.
+*   **Financial and Property-Specific Data:** Financial statements, leases, physical condition reports, zoning and regulatory compliance, and environmental risk assessments.
+
+---
+
+#### **2. Primary Key Performance Indicators (KPIs) for Evaluation**
+
+Beyond basic financial metrics, CRE professionals analyze a diverse set of KPIs across operational, market, location, and other specific categories to make informed acquisition decisions.
+
+##### **Operational KPIs**
+
+These focus on the efficiency and performance of a property's ongoing management.
+
+*   **Occupancy Rate:** Percentage of rented space.
+*   **Net Operating Income (NOI):** Income after deducting operating expenses.
+*   **Operating Expense Ratio (OER):** Percentage of income towards operating expenses.
+*   **Lease Renewal Rate:** Tenant retention upon lease expiration.
+*   **Tenant Turnover Time:** Time between tenants.
+*   **Capital Expenditures (CapEx):** Funds for property acquisition, upgrades, and maintenance.
+*   **Revenue Growth:** Income from rent increases or new amenities.
+*   **Delinquency Rate:** Percentage of tenants with outstanding rent.
+*   **Leasing Conversions:** Success rate of converting leads to leases.
+*   **Cash Flow from Operations:** Net cash from core property activities.
+
+##### **Market KPIs**
+
+These assess the broader economic and real estate landscape.
+
+*   **Market Rate:** Current buying/selling price determined by supply and demand.
+*   **Capitalization Rate (Cap Rate):** Expected rate of return on investment.
+*   **Rental Growth Rate:** Expected trend in average monthly rental prices.
+*   **Real Estate Demand Growth:** Estimated using mortgage applications, population trends, etc.
+*   **Cost per Acquisition (CPA):** Total cost of acquiring a new tenant or property.
+*   **Return on Investment (ROI):** Financial performance of acquisition campaigns.
+*   **Internal Rate of Return (IRR):** Benchmark for value creation.
+*   **Acquisition Cost Basis:** Total money spent to acquire a property before operational costs.
+*   **Project Cycle Time:** Time from property acquisition to sale.
+*   **Time to Break-Even:** Months until cumulative EBITDA turns positive.
+*   **Capital Deployment Rate:** Speed at which capital is invested.
+*   **Cost Overrun Percentage:** Budget deviation during construction.
+
+##### **Location KPIs**
+
+These evaluate the suitability and attractiveness of the geographical setting.
+
+*   **Average Daily Traffic (ADT):** Number of vehicles passing each day.
+*   **Population Growth (within a radius):** Increasing residential density.
+*   **Proximity to Amenities/Transportation:** Influences desirability and is assessed qualitatively.
+*   **Walk Score/Transit Score:** Indicates walkability and transit-friendliness.
+
+##### **Traffic KPIs**
+
+These measure the movement of people and vehicles around a property.
+
+*   **Foot Traffic Data:** Insights into consumer activity.
+*   **Vehicle Traffic Counts:** Number of vehicles passing a location.
+*   **Traffic Patterns:** Observing increases in traffic counts in areas with strong residential growth.
+
+##### **Demographics KPIs**
+
+These analyze the characteristics of the population in the vicinity.
+
+*   **Population Density:** Concentration of people in the area.
+*   **Income Levels:** Average household income.
+*   **Age Distribution:** Breakdown of population by age groups.
+*   **Consumer Movement Data:** Combines demographic data with customer movement.
+
+##### **Competition KPIs**
+
+These assess the competitive landscape.
+
+*   **Number of Similar Businesses in X-mile Radius:** Market saturation and competitive pressure.
+*   **Competitor Occupancy Rates:** Comparison to the target property's occupancy.
+*   **Competitor Rental Rates:** Analysis of similar spaces' pricing.
+
+##### **Visibility & Access KPIs**
+
+These relate to how easily a property can be seen and accessed.
+
+*   **Street Frontage:** Length of property line along a street.
+*   **Signage Opportunities:** Potential for prominent business signage.
+*   **Accessibility:** Ease of access for vehicles and pedestrians.
+
+##### **Property Specifics KPIs**
+
+These delve into the details of the physical property.
+
+*   **Cost per Square Foot:** Value relative to other projects.
+*   **Property Condition Score:** Assessment of the physical state.
+*   **Building Class:** Quality, amenities, and market positioning (e.g., Class A, B, C).
+*   **Square Footage (Leasable/Gross):** Area.
+*   **Zoning & Land Use Restrictions:** Permitted uses and development limitations.
+*   **Environmental Assessments:** Potential environmental risks or liabilities (e.g., Phase I/II reports).
+*   **Potential for Redevelopment/Expansion:** Opportunities to add value through physical changes.
+*   **Historic Preservation Status:** Restrictions due to historical designation.
+*   **Property Tax History:** Trends and stability of property tax burdens.
+*   **Insurance Costs:** Current and projected insurance expenses.
+*   **Energy Efficiency Rating:** Performance related to energy consumption.
+*   **Seismic Risk Score:** Relevance in earthquake-prone areas.
+*   **Flood Zone Designation:** Impact on insurance and development.
+*   **Year Built/Renovated:** Age and recency of updates.
+*   **Deferred Maintenance Backlog:** Cost of overdue repairs.
+
+---
