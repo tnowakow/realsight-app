@@ -85,6 +85,39 @@ model Payment {
   updatedAt       DateTime @updatedAt
 }
 
+model AcquisitionTarget {
+  id                    String      @id @default(uuid())
+  property_id           String
+  property              Property    @relation(fields: [property_id], references: [id])
+  deal_type             String
+  narrative             String
+  purchase_price        Float
+  square_footage        Int
+  current_occupancy     Float
+  current_noi           Float
+  market_cap_rate       Float
+  proforma_noi          Float
+  renovation_budget     Float?
+  lease_up_time         Int?
+  tenant_improvement_budget Float?
+  construction_time     Int?
+  created_at            DateTime    @default(now())
+  updated_at            DateTime    @updatedAt
+  scores                AcquisitionScore[]
+}
+
+model AcquisitionScore {
+  id                    String      @id @default(uuid())
+  target_id             String
+  target                AcquisitionTarget @relation(fields: [target_id], references: [id])
+  financials            Float
+  value_add             Float
+  market_location       Float
+  property_characteristics Float
+  composite_score       Float
+  calculated_at         DateTime    @default(now())
+}
+
 model Metric {
   id           String   @id @default(uuid())
   portfolio    Portfolio @relation(fields: [portfolio_id], references: [id])

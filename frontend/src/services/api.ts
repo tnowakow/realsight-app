@@ -130,3 +130,25 @@ export const getTenantsByPortfolio = async (portfolioId: string): Promise<Tenant
     return getMockTenants(portfolioId);
   }
 };
+
+export const getAcquisitionPipeline = async (): Promise<any[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/acquisitions/pipeline`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.error('❌ Acquisition pipeline fetch failed:', error);
+    return [];
+  }
+};
+
+export const getAcquisitionTarget = async (id: string): Promise<any> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/acquisitions/${id}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.error('❌ Acquisition target fetch failed:', error);
+    return {};
+  }
+};

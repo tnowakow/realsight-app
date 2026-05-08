@@ -5,6 +5,7 @@ import { PortfolioPropertySelector } from './components/PortfolioPropertySelecto
 import { TenantFinancialsTable } from './components/TenantFinancialsTable';
 import { OverviewTab } from './components/tabs/OverviewTab';
 import { PortfolioPerformanceTab } from './components/tabs/PortfolioPerformanceTab';
+import AcquisitionsTab from './components/tabs/AcquisitionsTab';
 
 function App() {
   const [activeTab, setActiveTab] = useState<'overview' | 'tenant-financials' | 'portfolio-performance' | 'acquisition'>('overview');
@@ -69,7 +70,7 @@ function App() {
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <Target className="w-4 h-4" /> Acquisition Targets
+              <Target className="w-4 h-4" /> Acquisitions
             </button>
           </nav>
         </div>
@@ -87,14 +88,7 @@ function App() {
         
         {activeTab === 'portfolio-performance' && <PortfolioPerformanceTab />}
         
-        {activeTab === 'acquisition' && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-white mb-4">Acquisition Targets</h2>
-            <div className="bg-slate-900/50 rounded-lg p-8 border border-slate-800 text-center">
-              <p className="text-slate-400">Acquisition target identification coming soon...</p>
-            </div>
-          </div>
-        )}
+        {activeTab === 'acquisition' && <AcquisitionsTab />}
       </main>
     </div>
   );

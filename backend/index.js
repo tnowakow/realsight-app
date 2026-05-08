@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const { PrismaClient } = require('@prisma/client');
 const dateUtils = require('./src/utils/dateUtils');
+const acquisitionController = require('./src/controllers/acquisitionController');
 
 const prisma = new PrismaClient();
 const app = express();
@@ -331,6 +332,11 @@ app.get('/api/metrics', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch metrics' });
   }
 });
+
+// ─── Acquisition Endpoints ─────────────────────────────────────────────────
+app.get('/api/acquisitions/pipeline', acquisitionController.getPipeline);
+app.get('/api/acquisitions/:id', acquisitionController.getTargetDetails);
+app.post('/api/acquisitions/score', acquisitionController.scoreTarget);
 
 // ─── Static frontend (SPA fallback) ────────────────────────────────────────
 const publicDir = path.join(__dirname, 'public');
