@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useRealSightStore, type PaymentRecord } from '../../store/useRealSightStore';
 import { AlertCard } from '../ui/AlertCard';
+import { Tooltip } from '../ui/Tooltip'; // Import the new Tooltip component
+import { Info } from 'lucide-react';
 
 export const OverviewTab = () => {
   const selectedPortfolioId = useRealSightStore((state) => state.selectedPortfolioId);
@@ -146,9 +148,16 @@ export const OverviewTab = () => {
   const healthVerdict = getHealthVerdict(metrics.healthScore);
 
   // KPI card component
-  const KPICard = ({ label, value, unit, target, isGood }: { label: string; value: number | string; unit?: string; target?: string; isGood?: boolean }) => (
+  const KPICard = ({ label, value, unit, target, isGood, tooltipText }: { label: string; value: number | string; unit?: string; target?: string; isGood?: boolean; tooltipText?: React.ReactNode }) => (
     <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-800 hover:border-emerald-500/50 transition-colors">
-      <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">{label}</div>
+      <div className="flex items-center justify-between text-xs text-slate-500 uppercase tracking-wider mb-1">
+        <span>{label}</span>
+        {tooltipText && (
+          <Tooltip text={tooltipText}>
+            <Info className="w-3 h-3 cursor-pointer" />
+          </Tooltip>
+        )}
+      </div>
       <div className="flex items-baseline gap-1">
         <span className="text-xl font-bold text-white">{typeof value === 'number' ? value.toLocaleString() : value}</span>
         {unit && <span className="text-sm text-slate-400">{unit}</span>}
@@ -171,6 +180,13 @@ export const OverviewTab = () => {
           unit="%" 
           target="≥95%"
           isGood={metrics.collectionRate >= 95}
+          tooltipText={
+            <>
+              <strong className="text-white">Rent Collection Rate:</strong> The percentage of total rent due that was actually collected in the current period.
+              <br /><br />
+              <span className="text-slate-400">Calculation: (Total Paid / Total Rent Due) * 100</span>
+            </>
+          }
         />
         <KPICard 
           label="Portfolio Occupancy" 
@@ -178,13 +194,26 @@ export const OverviewTab = () => {
           unit="%" 
           target="≥90%"
           isGood={metrics.occupancyRate >= 90}
+          tooltipText={
+            <>
+              <strong className="text-white">Portfolio Occupancy:</strong> The percentage of total rentable units that currently have an active lease.
+              <br /><br />
+              <span className="text-slate-400">Calculation: (Occupied Units / Total Units) * 100</span>
+            </>
+          }
         />
         <KPICard 
           label="Total Outstanding" 
-          value={metrics.outstandingDebt} 
-          unit="$" 
+          value={formatCurrency(metrics.outstandingDebt)}
           target="<$15K"
           isGood={metrics.outstandingDebt <= 15000}
+          tooltipText={
+            <>
+              <strong className="text-white">Total Outstanding:</strong> The total dollar amount of unpaid rent across all tenants in the current period.
+              <br /><br />
+              <span className="text-slate-400">Calculation: Total Rent Due - Total Paid</span>
+            </>
+          }
         />
         <KPICard 
           label="Avg Days Past Due" 
@@ -192,26 +221,47 @@ export const OverviewTab = () => {
           unit="days" 
           target="<10 days"
           isGood={metrics.avgDaysPastDue <= 10}
+          tooltipText={
+            <>
+              <strong className="text-white">Avg. Days Past Due:</strong> The average number of days rent is overdue, calculated *only* for tenants who are currently late.
+              <br /><br />
+              <span className="text-slate-400">This metric is not diluted by on-time payers.</span>
+            </>
+          }
         />
         <KPICard 
           label="Monthly Revenue" 
-          value={metrics.totalRentDue} 
-          unit="$" 
+          value={formatCurrency(metrics.totalRentDue)}
           target=""
+          tooltipText={
+            <>
+              <strong className="text-white">Monthly Revenue:</strong> The total potential rent due from all leased units for the current month.
+              <br /><br />
+              <span className="text-slate-400">This represents the gross potential income.</span>
+            </>
+          }
         />
         <KPICard 
           label="Problem Tenants" 
           value={metrics.problemTenantsCount} 
-          unit="" 
           target="≤2"
           isGood={metrics.problemTenantsCount <= 2}
+          tooltipText={
+            <>
+              <strong className="text-white">Problem Tenants:</strong> The number of tenants who are significantly late (e.g., >15 days) or have a payment status of 'partial', 'delinquent', or 'defaulted'.
+            </>
+          }
         />
         <KPICard 
           label="Active Alerts" 
           value={metrics.alertsActive} 
-          unit="" 
           target="0"
           isGood={metrics.alertsActive === 0}
+          tooltipText={
+            <>
+              <strong className="text-white">Active Alerts:</strong> The number of tenants with a 'critical' or 'high' severity status, typically those who are severely delinquent or have defaulted.
+            </>
+          }
         />
         <KPICard 
           label="NOI Margin" 
@@ -219,6 +269,13 @@ export const OverviewTab = () => {
           unit="%" 
           target="≥25%"
           isGood={metrics.noiMargin >= 25}
+          tooltipText={
+            <>
+              <strong className="text-white">NOI Margin (Est.):</strong> An estimate of the Net Operating Income margin.
+              <br /><br />
+              <span className="text-slate-400">Calculation: Based on a standard 35% operating expense ratio. This is a temporary estimate until real expense data is integrated.</span>
+            </>
+          }
         />
       </section>
 
@@ -250,15 +307,30 @@ export const OverviewTab = () => {
           <div className="text-xs text-slate-500 uppercase tracking-wider mt-1">Active Tenants</div>
         </div>
         <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-800 text-center">
-          <div className="text-xl font-bold text-emerald-400">{formatCurrency(metrics.totalRentDue)}</div>
+          <div className="flex items-center justify-center gap-2">
+            <div className="text-xl font-bold text-emerald-400">{formatCurrency(metrics.totalRentDue)}</div>
+            <Tooltip text={<><strong>Monthly Revenue:</strong> The total potential rent due from all leased units for the current month.</>}>
+              <Info className="w-3 h-3 cursor-pointer text-slate-500" />
+            </Tooltip>
+          </div>
           <div className="text-xs text-slate-500 uppercase tracking-wider mt-1">Monthly Revenue</div>
         </div>
         <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-800 text-center">
-          <div className="text-2xl font-bold text-white">{metrics.occupancyRate}%</div>
+          <div className="flex items-center justify-center gap-2">
+            <div className="text-2xl font-bold text-white">{metrics.occupancyRate}%</div>
+            <Tooltip text={<><strong>Average Occupancy:</strong> The percentage of total rentable units that currently have an active lease across the selected portfolio/property.</>}>
+              <Info className="w-3 h-3 cursor-pointer text-slate-500" />
+            </Tooltip>
+          </div>
           <div className="text-xs text-slate-500 uppercase tracking-wider mt-1">Avg Occupancy</div>
         </div>
         <div className={`rounded-lg p-4 border text-center ${healthVerdict.bg} ${healthVerdict.color === 'text-red-400' ? 'border-red-500/50' : healthVerdict.color === 'text-orange-400' ? 'border-orange-500/50' : healthVerdict.color === 'text-yellow-400' ? 'border-yellow-500/50' : 'border-emerald-500/50'}`}>
-          <div className={`text-2xl font-bold ${healthVerdict.color}`}>{metrics.alertsActive}</div>
+          <div className="flex items-center justify-center gap-2">
+            <div className={`text-2xl font-bold ${healthVerdict.color}`}>{metrics.alertsActive}</div>
+            <Tooltip text={<><strong>Active Alerts:</strong> The number of tenants with a 'critical' or 'high' severity status, indicating severe delinquency or default.</>}>
+              <Info className="w-3 h-3 cursor-pointer" />
+            </Tooltip>
+          </div>
           <div className="text-xs text-slate-500 uppercase tracking-wider mt-1">Alerts Active</div>
         </div>
       </section>
