@@ -32,8 +32,11 @@ const getPipeline = async (req, res) => {
       property_name: acq.property.name,
       address: `${acq.property.city}, ${acq.property.state}`,
       market: acq.property.city,
+      // Pass through the core financial metrics
+      cap_rate: acq.market_cap_rate,
+      noi_growth_percent: ((acq.proforma_noi - acq.current_noi) / acq.current_noi) * 100,
       // Use the composite score from the first (and likely only) score record
-      acquisition_score: acq.scores[0]?.composite_score || 0, 
+      acquisition_score: acq.scores[0]?.composite_score || 0,
     }));
     
     // Now, sort the results reliably in application code
