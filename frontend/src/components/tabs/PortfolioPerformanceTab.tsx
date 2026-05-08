@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useRealSightStore } from '../../store/useRealSightStore';
-import { getPortfolioMetrics, getPropertyPerformance, getTenantsByProperty, type PortfolioMetric, type PropertyPerformance, type Tenant } from '../../services/api';
+import { getPortfolioMetrics, getPropertyPerformance, getTenantsByProperty, type PortfolioMetric, type PropertyPerformance } from '../../services/api';
+import type { Tenant } from '../../store/useRealSightStore';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend, Cell
@@ -45,7 +46,7 @@ const PropertyTenantDetail = ({ tenants, propertyId }: { tenants: Tenant[]; prop
 
       // Tenant doesn't have payments array - we'd need to fetch from backend or use currentPayment
       // For now, show basic info and current payment status only
-      const currentPmt = tenant.currentPayment || { amount_paid: 0, payment_status: 'no_data' as const, days_past_due: 0 };
+      const currentPmt = tenant.currentPayment || { amount_paid: 0, amount_due: 0, payment_status: 'no_data' as const, days_past_due: 0 };
 
       return {
         id: tenant.id,
@@ -56,7 +57,7 @@ const PropertyTenantDetail = ({ tenants, propertyId }: { tenants: Tenant[]; prop
         recentPaymentStatus: currentPmt.payment_status,
         daysPastDue: currentPmt.days_past_due ?? 0,
         amountPaid: currentPmt.amount_paid ?? 0,
-        collectionRate: currentPmt.amount_paid >= currentPmt.amount_due ? 100 : (currentPmt.amount_paid / currentPmt.amount_due) * 100,
+        collectionRate: currentPmt.amount_due > 0 ? (currentPmt.amount_paid / currentPmt.amount_due) * 100 : 100,
         monthlyRevenue: [currentPmt.amount_paid], // Single data point for now
       };
     }).filter(Boolean) as any[];
