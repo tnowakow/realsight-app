@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useRealSightStore } from '../../store/useRealSightStore';
-import { getPortfolioMetrics, getPropertyPerformance, type PortfolioMetric, type PropertyPerformance } from '../../services/api';
+import { getPortfolioMetrics, getPropertyPerformance, getTenantsByProperty, type PortfolioMetric, type PropertyPerformance, type Tenant } from '../../services/api';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend, Cell
@@ -33,6 +33,180 @@ const TYPE_COLORS: Record<string, string> = {
 const collectionRateColor = (r: number) =>
   r >= 95 ? '#34d399' : r >= 85 ? '#fbbf24' : '#f87171';
 
+// ─── Property-level tenant detail view ─────────────────────────────────────
+const PropertyTenantDetail = ({ tenants, propertyId }: { tenants: Tenant[]; propertyId: string }) => {
+  const property = useRealSightStore(s => s.properties).find(p => p.id === propertyId);
+
+  // Aggregate tenant payment data
+  const tenantData = useMemo(() => {
+    return tenants.map(tenant => {
+      const lease = tenant.leases[0];
+      if (!lease) return null;
+
+      const payments = tenant.payments || [];
+      const recentPmt = payments.length > 0 ? payments[0] : null;
+
+      // Calculate 6-month trend
+      const monthlyRevenue = [];
+      for (let mo = 5; mo >= 0; mo--) {
+        const mStart = new Date(); mStart.setDate(1); mStart.setHours(0,0,0,0); mStart.setMonth(mStart.getMonth() - mo - 1);
+        const mEnd   = new Date(); mEnd.setDate(1);   mEnd.setHours(0,0,0,0);   mEnd.setMonth(mEnd.getMonth() - mo);
+        const pmts = payments.filter(p => {
+          const pd = new Date(p.time);
+          return pd >= mStart && pd < mEnd;
+        });
+        monthlyRevenue.push(pmts.reduce((s, p) => s + p.amount_paid, 0));
+      }
+
+      const totalDue6mo = lease.monthly_rent * 6;
+      const totalPaid6mo = payments.slice(0, 6).reduce((s, p) => s + p.amount_paid, 0);
+      const collectionRate = totalDue6mo > 0 ? (totalPaid6mo / totalDue6mo) * 100 : 0;
+
+      return {
+        id: tenant.id,
+        name: tenant.business_name,
+        businessType: tenant.business_type,
+        creditRating: tenant.credit_rating,
+        monthlyRent: lease.monthly_rent,
+        recentPaymentStatus: recentPmt?.payment_status ?? 'no_data',
+        daysPastDue: recentPmt?.days_past_due ?? 0,
+        amountPaid: recentPmt?.amount_paid ?? 0,
+        collectionRate,
+        monthlyRevenue,
+      };
+    }).filter(Boolean) as any[];
+  }, [tenants]);
+
+  if (!property) return null;
+
+  const totalMonthlyRent = tenantData.reduce((s, t) => s + t.monthlyRent, 0);
+  const avgCollectionRate = tenantData.length > 0 
+    ? tenantData.reduce((s, t) => s + t.collectionRate, 0) / tenantData.length 
+    : 0;
+
+  return (
+    <div className="space-y-6">
+      {/* Property header */}
+      <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-white">{property.name}</h2>
+            <p className="text-sm text-slate-400 mt-1">
+              {property.city}, {property.state} · {property.property_type}
+            </p>
+            <div className="flex gap-4 mt-3 text-xs text-slate-500">
+              <span>{property.total_square_feet.toLocaleString()} sqft</span>
+              <span>·</span>
+              <span>{tenantData.length} tenants</span>
+              <span>·</span>
+              <span>${(totalMonthlyRent / 1000).toFixed(0)}K/mo rent</span>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-slate-500 uppercase tracking-wider">Avg Collection</p>
+            <p className={`text-2xl font-bold ${avgCollectionRate >= 90 ? 'text-emerald-400' : avgCollectionRate >= 80 ? 'text-yellow-400' : 'text-red-400'}`}>
+              {avgCollectionRate.toFixed(1)}%
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Tenant performance table */}
+      <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-white">Tenant Payment Performance</h3>
+          <span className="text-xs text-slate-500">Last 6 months</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-950/60 border-b border-slate-800">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Tenant</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-400 uppercase tracking-wider hidden md:table-cell">Credit</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Monthly Rent</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider hidden lg:table-cell">6-Mo Collection</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-400 uppercase tracking-wider hidden xl:table-cell">Trend</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800">
+              {tenantData.map(t => {
+                const isProblem = t.recentPaymentStatus === 'delinquent' || t.recentPaymentStatus === 'defaulted' || t.daysPastDue > 15;
+                return (
+                  <tr key={t.id} className={`hover:bg-slate-800/40 transition-colors ${isProblem ? 'bg-red-500/5' : ''}`}>
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-white text-sm">{t.name}</div>
+                      <div className="text-xs text-slate-500">{t.businessType}</div>
+                    </td>
+                    <td className="px-4 py-3 hidden md:table-cell">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        t.creditRating.startsWith('A') ? 'bg-emerald-500/20 text-emerald-400' :
+                        t.creditRating.startsWith('B') ? 'bg-yellow-500/20 text-yellow-400' :
+                        'bg-red-500/20 text-red-400'
+                      }`}>
+                        {t.creditRating}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono text-slate-300">{fmtK(t.monthlyRent)}</td>
+                    <td className="px-4 py-3 text-center">
+                      {t.daysPastDue > 0 ? (
+                        <span className={`text-xs font-semibold ${
+                          t.daysPastDue > 30 ? 'text-red-400' : t.daysPastDue > 15 ? 'text-orange-400' : 'text-yellow-400'
+                        }`}>
+                          {t.daysPastDue} days late
+                        </span>
+                      ) : (
+                        <span className="text-xs text-emerald-400">✓ On time</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right hidden lg:table-cell">
+                      <span className={`font-semibold ${
+                        t.collectionRate >= 95 ? 'text-emerald-400' : 
+                        t.collectionRate >= 85 ? 'text-yellow-400' : 'text-red-400'
+                      }`}>
+                        {t.collectionRate.toFixed(1)}%
+                      </span>
+                    </td>
+                    {/* Sparkline */}
+                    <td className="px-4 py-3 text-center hidden xl:table-cell">
+                      <svg width="64" height="24" viewBox="0 0 64 24">
+                        {(() => {
+                          const min = Math.min(...t.monthlyRevenue);
+                          const max = Math.max(...t.monthlyRevenue);
+                          const range = max - min || 1;
+                          return (
+                            <>
+                              <polyline
+                                fill="none"
+                                stroke={t.collectionRate >= 90 ? '#34d399' : t.collectionRate >= 80 ? '#fbbf24' : '#f87171'}
+                                strokeWidth="1.5"
+                                strokeLinejoin="round"
+                                strokeLinecap="round"
+                                points={t.monthlyRevenue.map((v, i) => {
+                                  const x = (i / 5) * 60 + 2;
+                                  const y = 22 - ((v - min) / range) * 20;
+                                  return `${x},${y}`;
+                                }).join(' ')}
+                              />
+                              {t.monthlyRevenue.map((v, i) => (
+                                <circle key={i} cx={(i / 5) * 60 + 2} cy={22 - ((v - min) / range) * 20} r="1.5" fill="#34d399" />
+                              ))}
+                            </>
+                          );
+                        })()}
+                      </svg>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── Sub-components ──────────────────────────────────────────────────────────
 const StatCard = ({ label, value, sub, trend }: { label: string; value: string; sub?: string; trend?: number }) => {
   const TrendIcon = trend == null ? null : trend > 0 ? TrendingUp : trend < 0 ? TrendingDown : Minus;
@@ -59,10 +233,12 @@ const SectionHeader = ({ title, subtitle }: { title: string; subtitle?: string }
 // ─── Main component ───────────────────────────────────────────────────────────
 export const PortfolioPerformanceTab = () => {
   const selectedPortfolioId = useRealSightStore(s => s.selectedPortfolioId);
+  const selectedPropertyId  = useRealSightStore(s => s.selectedPropertyId);
   const portfolios          = useRealSightStore(s => s.portfolios);
 
   const [metrics,     setMetrics]     = useState<PortfolioMetric[]>([]);
   const [performance, setPerformance] = useState<PropertyPerformance[]>([]);
+  const [tenants,     setTenants]     = useState<Tenant[]>([]);
   const [loading,     setLoading]     = useState(false);
   const [sortKey,     setSortKey]     = useState<keyof PropertyPerformance>('estimated_noi');
   const [sortDir,     setSortDir]     = useState<'asc' | 'desc'>('desc');
@@ -70,15 +246,29 @@ export const PortfolioPerformanceTab = () => {
   useEffect(() => {
     if (!selectedPortfolioId) return;
     setLoading(true);
-    Promise.all([
-      getPortfolioMetrics(selectedPortfolioId),
-      getPropertyPerformance(selectedPortfolioId),
-    ]).then(([m, p]) => {
+
+    const fetchAll = async () => {
+      // Always fetch portfolio-level data
+      const [m, p] = await Promise.all([
+        getPortfolioMetrics(selectedPortfolioId),
+        getPropertyPerformance(selectedPortfolioId),
+      ]);
       setMetrics(m);
       setPerformance(p);
+
+      // If a specific property is selected, also fetch its tenants
+      if (selectedPropertyId) {
+        const t = await getTenantsByProperty(selectedPropertyId);
+        setTenants(t);
+      } else {
+        setTenants([]);
+      }
+
       setLoading(false);
-    });
-  }, [selectedPortfolioId]);
+    };
+
+    fetchAll();
+  }, [selectedPortfolioId, selectedPropertyId]);
 
   // ── Trend chart data: collection rate + revenue last 6 months ───────────
   const trendData = useMemo(() => {
@@ -151,6 +341,11 @@ export const PortfolioPerformanceTab = () => {
       sortDir === 'desc' ? <ArrowDown className="w-3 h-3 inline ml-1" /> : <ArrowUp className="w-3 h-3 inline ml-1" />;
 
   const portfolioName = portfolios.find(p => p.id === selectedPortfolioId)?.name ?? 'Portfolio';
+
+  // Show property-level view if a specific property is selected
+  if (selectedPropertyId && tenants.length > 0) {
+    return <PropertyTenantDetail tenants={tenants} propertyId={selectedPropertyId} />;
+  }
 
   // ── Summary totals ───────────────────────────────────────────────────────
   const totalRevenue   = performance.reduce((s, p) => s + p.total_paid, 0);
