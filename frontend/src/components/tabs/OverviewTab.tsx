@@ -62,7 +62,7 @@ export const OverviewTab = () => {
       const collectionRate = totalRentDue > 0 ? (totalPaid / totalRentDue) * 100 : 100;
       const outstandingDebt = Math.max(0, totalRentDue - totalPaid);
       const avgDaysPastDue = lateTenantCount > 0 ? Math.round(lateDaysPastDueSum / lateTenantCount) : 0;
-      const netOperatingIncome = totalPaid * 0.65;
+      const netOperatingIncome = totalPaid - (totalRentDue * 0.35); // OpEx is based on potential rent
       const noiMargin = totalRentDue > 0 ? (netOperatingIncome / totalRentDue) * 100 : 0;
       let healthScore = 100 - (100 - collectionRate) * 1.5 - avgDaysPastDue * 0.5 - problemTenants.length * 5 - (100 - occupancyRate);
       
@@ -95,7 +95,7 @@ export const OverviewTab = () => {
     outstanding: <span><strong className="text-white">Total Outstanding:</strong> Total unpaid rent.</span>,
     daysPastDue: <span><strong className="text-white">Avg. Days Past Due:</strong> Average for late tenants only.</span>,
     monthlyRevenue: <span><strong className="text-white">Monthly Revenue:</strong> Gross potential income for the month.</span>,
-    problemTenants: <span><strong className="text-white">Problem Tenants:</strong> Count of tenants who are >15 days late or have a problem status.</span>,
+    problemTenants: <span><strong className="text-white">Problem Tenants:</strong> Count of tenants who are &gt;15 days late or have a problem status.</span>,
     activeAlerts: <span><strong className="text-white">Active Alerts:</strong> Count of tenants with a 'critical' or 'high' severity status.</span>,
     noiMargin: <span><strong className="text-white">NOI Margin (Est.):</strong> Estimated Net Operating Income margin (assumes 35% OpEx).</span>,
   };
