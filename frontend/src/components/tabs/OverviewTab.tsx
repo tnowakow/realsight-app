@@ -205,7 +205,7 @@ export const OverviewTab = () => {
         <KPICard 
           label="Total Outstanding" 
           value={formatCurrency(metrics.outstandingDebt)}
-          target="<$15K"
+          target="&lt;$15K"
           isGood={metrics.outstandingDebt <= 15000}
           tooltipText={
             <>
@@ -219,7 +219,7 @@ export const OverviewTab = () => {
           label="Avg Days Past Due" 
           value={metrics.avgDaysPastDue} 
           unit="days" 
-          target="<10 days"
+          target="&lt;10 days"
           isGood={metrics.avgDaysPastDue <= 10}
           tooltipText={
             <>
