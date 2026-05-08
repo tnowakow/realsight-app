@@ -21,30 +21,22 @@ const getPipeline = async (req, res) => {
             state: true,
           }
         }
-      },
-      orderBy: {
-        scores: {
-          _count: 'desc' // Placeholder sort, should be by composite_score
-        }
       }
+      // REMOVED: The orderBy clause was causing a server crash.
+      // Sorting will be handled in the application code below.
     });
-
-    // TODO: The sorting is not quite right. We need to sort by the actual composite_score
-    // on the related AcquisitionScore model. This is a more complex query.
-    // For now, this gets the API working. A better approach might be a raw query
-    // or restructuring the data. Let's get it functional first.
     
-    // Manually attach property details to the top level for easier frontend access
+    // Manually attach property details and the relevant score to the top level for easier frontend access
     const result = acquisitions.map(acq => ({
       ...acq,
       property_name: acq.property.name,
       address: `${acq.property.city}, ${acq.property.state}`,
       market: acq.property.city,
-      // Use the first score's composite score for sorting and display
-      acquisition_score: acq.scores[0]?.composite_score || 0,
+      // Use the composite score from the first (and likely only) score record
+      acquisition_score: acq.scores[0]?.composite_score || 0, 
     }));
     
-    // Now sort in application code
+    // Now, sort the results reliably in application code
     result.sort((a, b) => b.acquisition_score - a.acquisition_score);
 
     res.json(result);
