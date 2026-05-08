@@ -74,7 +74,7 @@ export const OverviewTab = () => {
       
       setMetrics({
         collectionRate: collectionRate.toFixed(1), avgDaysPastDue, outstandingDebt, noiMargin: noiMargin.toFixed(1),
-        problemTenantsCount: problemTenants.length, totalRentDue, totalPaid, tenantCount: tenants.length,
+        problemTenantsCount: problemTenants.length, totalRentDue, totalPaid,
         propertyCount: relevantProperties.length, occupancyRate: occupancyRate.toFixed(1),
         healthScore: Math.max(0, Math.min(100, healthScore)).toFixed(0), problemTenants,
         alertsActive: problemTenants.length,
