@@ -107,14 +107,14 @@ export const OverviewTab = () => {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KPICard label="Rent Collection Rate" value={metrics.collectionRate} unit="%" target="≥95%" isGood={metrics.collectionRate >= 95} tooltipText={tooltips.collectionRate} />
-        <KPICard label="Portfolio Occupancy" value={metrics.occupancyRate} unit="%" target="≥90%" isGood={metrics.occupancyRate >= 90} tooltipText={tooltips.occupancy} />
-        <KPICard label="Total Outstanding" value={formatCurrency(metrics.outstandingDebt)} target={'< $15K'} isGood={metrics.outstandingDebt <= 15000} tooltipText={tooltips.outstanding} />
-        <KPICard label="Avg Days Past Due" value={metrics.avgDaysPastDue} unit="days" target={'< 10 days'} isGood={metrics.avgDaysPastDue <= 10} tooltipText={tooltips.daysPastDue} />
+        <KPICard label="Rent Collection Rate" value={metrics.collectionRate} unit="%" target="&ge;95%" isGood={metrics.collectionRate >= 95} tooltipText={tooltips.collectionRate} />
+        <KPICard label="Portfolio Occupancy" value={metrics.occupancyRate} unit="%" target="&ge;90%" isGood={metrics.occupancyRate >= 90} tooltipText={tooltips.occupancy} />
+        <KPICard label="Total Outstanding" value={formatCurrency(metrics.outstandingDebt)} target={'&lt; $15K'} isGood={metrics.outstandingDebt <= 15000} tooltipText={tooltips.outstanding} />
+        <KPICard label="Avg Days Past Due" value={metrics.avgDaysPastDue} unit="days" target={'&lt; 10 days'} isGood={metrics.avgDaysPastDue <= 10} tooltipText={tooltips.daysPastDue} />
         <KPICard label="Monthly Revenue" value={formatCurrency(metrics.totalRentDue)} tooltipText={tooltips.monthlyRevenue} />
-        <KPICard label="Problem Tenants" value={metrics.problemTenantsCount} target="≤2" isGood={metrics.problemTenantsCount <= 2} tooltipText={tooltips.problemTenants} />
+        <KPICard label="Problem Tenants" value={metrics.problemTenantsCount} target="&le;2" isGood={metrics.problemTenantsCount <= 2} tooltipText={tooltips.problemTenants} />
         <KPICard label="Active Alerts" value={metrics.alertsActive} target="0" isGood={metrics.alertsActive === 0} tooltipText={tooltips.activeAlerts} />
-        <KPICard label="NOI Margin" value={metrics.noiMargin} unit="%" target="≥25%" isGood={metrics.noiMargin >= 25} tooltipText={tooltips.noiMargin} />
+        <KPICard label="NOI Margin" value={metrics.noiMargin} unit="%" target="&ge;25%" isGood={metrics.noiMargin >= 25} tooltipText={tooltips.noiMargin} />
       </section>
 
       {metrics.problemTenants.length > 0 && (
