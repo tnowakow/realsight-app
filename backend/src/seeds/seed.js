@@ -161,9 +161,13 @@ const pickProfile = (portfolioName) => {
 async function main() {
   console.log('🌱 Seeding RealSight with 6 months of payment history...\n');
 
+  // Deletion order matters due to foreign key constraints.
+  // Delete children before parents.
   await prisma.payment.deleteMany();
   await prisma.lease.deleteMany();
   await prisma.tenant.deleteMany();
+  await prisma.acquisitionScore.deleteMany();
+  await prisma.acquisitionTarget.deleteMany();
   await prisma.property.deleteMany();
   await prisma.metric.deleteMany();
   await prisma.portfolio.deleteMany();

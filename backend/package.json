@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "echo 'Starting deployment...' && npx prisma generate && npx prisma migrate dev --name deploy-fix --skip-seed && echo 'Migration successful!' && node src/seeds/seed.js && echo 'Seeding complete!' && echo 'Starting server...' && node index.js",
+    "start": "echo 'Starting deployment...' && npx prisma generate && npx prisma migrate deploy && echo 'Migration successful!' && node src/seeds/seed.js && echo 'Seeding complete!' && echo 'Starting server...' && node index.js",
     "start:robust": "sleep 5 && npx prisma generate && npx prisma migrate deploy && node src/seeds/seed.js && node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
