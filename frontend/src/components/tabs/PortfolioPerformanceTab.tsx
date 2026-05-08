@@ -40,27 +40,12 @@ const PropertyTenantDetail = ({ tenants, propertyId }: { tenants: Tenant[]; prop
   // Aggregate tenant payment data
   const tenantData = useMemo(() => {
     return tenants.map(tenant => {
-      const lease = tenant.leases[0];
+      const lease = tenant.lease;
       if (!lease) return null;
 
-      const payments = tenant.payments || [];
-      const recentPmt = payments.length > 0 ? payments[0] : null;
-
-      // Calculate 6-month trend
-      const monthlyRevenue = [];
-      for (let mo = 5; mo >= 0; mo--) {
-        const mStart = new Date(); mStart.setDate(1); mStart.setHours(0,0,0,0); mStart.setMonth(mStart.getMonth() - mo - 1);
-        const mEnd   = new Date(); mEnd.setDate(1);   mEnd.setHours(0,0,0,0);   mEnd.setMonth(mEnd.getMonth() - mo);
-        const pmts = payments.filter(p => {
-          const pd = new Date(p.time);
-          return pd >= mStart && pd < mEnd;
-        });
-        monthlyRevenue.push(pmts.reduce((s, p) => s + p.amount_paid, 0));
-      }
-
-      const totalDue6mo = lease.monthly_rent * 6;
-      const totalPaid6mo = payments.slice(0, 6).reduce((s: number, p: any) => s + p.amount_paid, 0);
-      const collectionRate = totalDue6mo > 0 ? (totalPaid6mo / totalDue6mo) * 100 : 0;
+      // Tenant doesn't have payments array - we'd need to fetch from backend or use currentPayment
+      // For now, show basic info and current payment status only
+      const currentPmt = tenant.currentPayment || { amount_paid: 0, payment_status: 'no_data' as const, days_past_due: 0 };
 
       return {
         id: tenant.id,
@@ -68,11 +53,11 @@ const PropertyTenantDetail = ({ tenants, propertyId }: { tenants: Tenant[]; prop
         businessType: tenant.business_type ?? 'N/A',
         creditRating: tenant.credit_rating ?? 'N/A',
         monthlyRent: lease.monthly_rent,
-        recentPaymentStatus: (recentPmt?.payment_status as any) ?? 'no_data',
-        daysPastDue: recentPmt?.days_past_due ?? 0,
-        amountPaid: recentPmt?.amount_paid ?? 0,
-        collectionRate,
-        monthlyRevenue,
+        recentPaymentStatus: currentPmt.payment_status,
+        daysPastDue: currentPmt.days_past_due ?? 0,
+        amountPaid: currentPmt.amount_paid ?? 0,
+        collectionRate: currentPmt.amount_paid >= currentPmt.amount_due ? 100 : (currentPmt.amount_paid / currentPmt.amount_due) * 100,
+        monthlyRevenue: [currentPmt.amount_paid], // Single data point for now
       };
     }).filter(Boolean) as any[];
   }, [tenants]);
@@ -169,32 +154,36 @@ const PropertyTenantDetail = ({ tenants, propertyId }: { tenants: Tenant[]; prop
                     </td>
                     {/* Sparkline */}
                     <td className="px-4 py-3 text-center hidden xl:table-cell">
-                      <svg width="64" height="24" viewBox="0 0 64 24">
-                        {(() => {
-                          const min = Math.min(...t.monthlyRevenue);
-                          const max = Math.max(...t.monthlyRevenue);
-                          const range = max - min || 1;
-                          return (
-                            <>
-                              <polyline
-                                fill="none"
-                                stroke={t.collectionRate >= 90 ? '#34d399' : t.collectionRate >= 80 ? '#fbbf24' : '#f87171'}
-                                strokeWidth="1.5"
-                                strokeLinejoin="round"
-                                strokeLinecap="round"
-                                points={t.monthlyRevenue.map((v: number, i: number) => {
-                                  const x = (i / 5) * 60 + 2;
-                                  const y = 22 - ((v - min) / range) * 20;
-                                  return `${x},${y}`;
-                                }).join(' ')}
-                              />
-                              {t.monthlyRevenue.map((v: number, i: number) => (
-                                <circle key={i} cx={(i / 5) * 60 + 2} cy={22 - ((v - min) / range) * 20} r="1.5" fill="#34d399" />
-                              ))}
-                            </>
-                          );
-                        })()}
-                      </svg>
+                      {t.monthlyRevenue.length > 1 ? (
+                        <svg width="64" height="24" viewBox="0 0 64 24">
+                          {(() => {
+                            const min = Math.min(...t.monthlyRevenue);
+                            const max = Math.max(...t.monthlyRevenue);
+                            const range = max - min || 1;
+                            return (
+                              <>
+                                <polyline
+                                  fill="none"
+                                  stroke={t.collectionRate >= 90 ? '#34d399' : t.collectionRate >= 80 ? '#fbbf24' : '#f87171'}
+                                  strokeWidth="1.5"
+                                  strokeLinejoin="round"
+                                  strokeLinecap="round"
+                                  points={t.monthlyRevenue.map((v: number, i: number) => {
+                                    const x = (i / 5) * 60 + 2;
+                                    const y = 22 - ((v - min) / range) * 20;
+                                    return `${x},${y}`;
+                                  }).join(' ')}
+                                />
+                                {t.monthlyRevenue.map((v: number, i: number) => (
+                                  <circle key={i} cx={(i / 5) * 60 + 2} cy={22 - ((v - min) / range) * 20} r="1.5" fill="#34d399" />
+                                ))}
+                              </>
+                            );
+                          })()}
+                        </svg>
+                      ) : (
+                        <span className="text-xs text-slate-500">—</span>
+                      )}
                     </td>
                   </tr>
                 );
