@@ -30,20 +30,26 @@ export const OverviewTab = () => {
   useEffect(() => {
     setIsLoading(true);
     if (selectedPortfolioId) {
-      const relevantProperties = selectedPropertyId ? properties.filter(p => p.id === selectedPropertyId) : properties;
-      if (relevantProperties.length === 0 && tenants.length === 0) {
+      const relevantProperties = selectedPropertyId
+        ? properties.filter(p => p.id === selectedPropertyId)
+        : properties;
+      const relevantTenants = selectedPropertyId
+        ? tenants.filter(t => t.property_id === selectedPropertyId)
+        : tenants;
+
+      if (relevantProperties.length === 0 && relevantTenants.length === 0) {
         setMetrics(null);
         setIsLoading(false);
         return;
       }
 
       const totalUnits = relevantProperties.reduce((sum, p) => sum + (p.unit_count || 0), 0);
-      const occupiedUnits = tenants.filter(t => t.lease).length;
+      const occupiedUnits = relevantTenants.filter(t => t.lease).length;
       const occupancyRate = totalUnits > 0 ? (occupiedUnits / totalUnits) * 100 : 0;
       let totalRentDue = 0, totalPaid = 0, lateDaysPastDueSum = 0, lateTenantCount = 0;
       const problemTenants: any[] = [];
 
-      tenants.forEach(tenant => {
+      relevantTenants.forEach(tenant => {
         if (tenant.lease) totalRentDue += tenant.lease.monthly_rent || 0;
         if (tenant.currentPayment) {
           const p = tenant.currentPayment;
@@ -71,7 +77,8 @@ export const OverviewTab = () => {
         problemTenantsCount: problemTenants.length, totalRentDue, totalPaid, tenantCount: tenants.length,
         propertyCount: relevantProperties.length, occupancyRate: occupancyRate.toFixed(1),
         healthScore: Math.max(0, Math.min(100, healthScore)).toFixed(0), problemTenants,
-        alertsActive: problemTenants.length
+        alertsActive: problemTenants.length,
+        tenantCount: relevantTenants.length // Use the filtered count
       });
     }
     const timer = setTimeout(() => setIsLoading(false), 250);
