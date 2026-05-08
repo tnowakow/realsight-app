@@ -5,7 +5,7 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend, Cell
 } from 'recharts';
-import { TrendingUp, TrendingDown, Minus, Building2, ArrowUp, ArrowDown, Loader, AlertTriangle } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, City, ArrowUp, ArrowDown, Loader, AlertTriangle } from 'lucide-react';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt = (n: number) =>
@@ -320,7 +320,7 @@ export const PortfolioPerformanceTab = () => {
             <h2 className="text-base font-semibold text-white">Property Performance Detail</h2>
             <p className="text-xs text-slate-500 mt-0.5">{portfolioName} — {performance.length} properties — click headers to sort</p>
           </div>
-          <Building2 className="w-5 h-5 text-slate-600" />
+          <City className="w-5 h-5 text-emerald-400" />
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

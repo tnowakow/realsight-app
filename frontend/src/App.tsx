@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { LayoutDashboard, Users, City, Target } from 'lucide-react';
 import { useRealSightStore } from './store/useRealSightStore';
 import { PortfolioPropertySelector } from './components/PortfolioPropertySelector';
 import { TenantFinancialsTable } from './components/TenantFinancialsTable';
@@ -32,43 +33,43 @@ function App() {
           <nav className="flex items-center gap-1 border-b border-slate-800">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
+              className={`px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1.5 ${
                 activeTab === 'overview' 
                   ? 'text-emerald-400 border-b-2 border-emerald-400' 
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              Overview
+              <LayoutDashboard className="w-4 h-4" /> Overview
             </button>
             <button
               onClick={() => setActiveTab('tenant-financials')}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
+              className={`px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1.5 ${
                 activeTab === 'tenant-financials' 
                   ? 'text-emerald-400 border-b-2 border-emerald-400' 
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              Tenant Financials
+              <Users className="w-4 h-4" /> Tenant Financials
             </button>
             <button
               onClick={() => setActiveTab('portfolio-performance')}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
+              className={`px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1.5 ${
                 activeTab === 'portfolio-performance' 
                   ? 'text-emerald-400 border-b-2 border-emerald-400' 
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              Portfolio Performance
+              <City className="w-4 h-4" /> Portfolio Performance
             </button>
             <button
               onClick={() => setActiveTab('acquisition')}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
+              className={`px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1.5 ${
                 activeTab === 'acquisition' 
                   ? 'text-emerald-400 border-b-2 border-emerald-400' 
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              Acquisition Targets
+              <Target className="w-4 h-4" /> Acquisition Targets
             </button>
           </nav>
         </div>
