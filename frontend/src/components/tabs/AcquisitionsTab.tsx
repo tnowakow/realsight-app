@@ -53,6 +53,7 @@ const AcquisitionsTab: React.FC = () => {
   
   // Filter and sort pipeline data
   const filteredAndSortedPipeline = React.useMemo(() => {
+    console.log('Filtering data with:', { dealTypeFilter, marketFilter, scoreThreshold });
     let result = [...pipeline];
     
     // Apply deal type filter
@@ -67,6 +68,8 @@ const AcquisitionsTab: React.FC = () => {
     
     // Apply score threshold filter
     result = result.filter(item => item.acquisition_score >= scoreThreshold);
+    
+    console.log('Filtered result count:', result.length);
     
     // Sort the results
     result.sort((a, b) => {
