@@ -147,9 +147,9 @@ export const OverviewTab = () => {
 
   const healthVerdict = getHealthVerdict(metrics.healthScore);
 
-  const monthlyRevenueTooltip = <><strong>Monthly Revenue:</strong> The total potential rent due from all leased units for the current month.</>;
-  const avgOccupancyTooltip = <><strong>Average Occupancy:</strong> The percentage of total rentable units that currently have an active lease across the selected portfolio/property.</>;
-  const activeAlertsTooltip = <><strong>Active Alerts:</strong> The number of tenants with a 'critical' or 'high' severity status, indicating severe delinquency or default.</>;
+  const monthlyRevenueTooltip = <span><strong>Monthly Revenue:</strong> The total potential rent due from all leased units for the current month.</span>;
+  const avgOccupancyTooltip = <span><strong>Average Occupancy:</strong> The percentage of total rentable units that currently have an active lease across the selected portfolio/property.</span>;
+  const activeAlertsTooltip = <span><strong>Active Alerts:</strong> The number of tenants with a 'critical' or 'high' severity status, indicating severe delinquency or default.</span>;
 
   // KPI card component
   const KPICard = ({ label, value, unit, target, isGood, tooltipText }: { label: string; value: number | string; unit?: string; target?: string; isGood?: boolean; tooltipText?: React.ReactNode }) => (
