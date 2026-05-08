@@ -170,6 +170,10 @@ export const OverviewTab = () => {
     </div>
   );
 
+const monthlyRevenueTooltip = <><strong>Monthly Revenue:</strong> The total potential rent due from all leased units for the current month.</>;
+  const avgOccupancyTooltip = <><strong>Average Occupancy:</strong> The percentage of total rentable units that currently have an active lease across the selected portfolio/property.</>;
+  const activeAlertsTooltip = <><strong>Active Alerts:</strong> The number of tenants with a 'critical' or 'high' severity status, indicating severe delinquency or default.</>;
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* 1. Eight KPI Boxes at Top */}
@@ -309,7 +313,7 @@ export const OverviewTab = () => {
         <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-800 text-center">
           <div className="flex items-center justify-center gap-2">
             <div className="text-xl font-bold text-emerald-400">{formatCurrency(metrics.totalRentDue)}</div>
-            <Tooltip text={<><strong>Monthly Revenue:</strong> The total potential rent due from all leased units for the current month.</>}>
+            <Tooltip text={monthlyRevenueTooltip}>
               <Info className="w-3 h-3 cursor-pointer text-slate-500" />
             </Tooltip>
           </div>
@@ -318,7 +322,7 @@ export const OverviewTab = () => {
         <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-800 text-center">
           <div className="flex items-center justify-center gap-2">
             <div className="text-2xl font-bold text-white">{metrics.occupancyRate}%</div>
-            <Tooltip text={<><strong>Average Occupancy:</strong> The percentage of total rentable units that currently have an active lease across the selected portfolio/property.</>}>
+            <Tooltip text={avgOccupancyTooltip}>
               <Info className="w-3 h-3 cursor-pointer text-slate-500" />
             </Tooltip>
           </div>
@@ -327,7 +331,7 @@ export const OverviewTab = () => {
         <div className={`rounded-lg p-4 border text-center ${healthVerdict.bg} ${healthVerdict.color === 'text-red-400' ? 'border-red-500/50' : healthVerdict.color === 'text-orange-400' ? 'border-orange-500/50' : healthVerdict.color === 'text-yellow-400' ? 'border-yellow-500/50' : 'border-emerald-500/50'}`}>
           <div className="flex items-center justify-center gap-2">
             <div className={`text-2xl font-bold ${healthVerdict.color}`}>{metrics.alertsActive}</div>
-            <Tooltip text={<><strong>Active Alerts:</strong> The number of tenants with a 'critical' or 'high' severity status, indicating severe delinquency or default.</>}>
+            <Tooltip text={activeAlertsTooltip}>
               <Info className="w-3 h-3 cursor-pointer" />
             </Tooltip>
           </div>
