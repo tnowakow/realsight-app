@@ -313,10 +313,6 @@ async function main() {
 
   // ─── Seed Acquisition Targets ──────────────────────────────────────────
   console.log('\n🎯 Seeding acquisition targets...');
-  
-  // Clear existing acquisition data first to prevent duplicates
-  await prisma.acquisitionScore.deleteMany();
-  await prisma.acquisitionTarget.deleteMany();
 
   const properties = await prisma.property.findMany();
 
