@@ -311,6 +311,60 @@ async function main() {
     console.log(`   🏠 ${numProperties} properties  👥 ${portfolioTenantCount} tenants  📊 ${portfolioPayments.length} payment records`);
   }
 
+  // ─── Seed Acquisition Targets ──────────────────────────────────────────
+  console.log('\n🎯 Seeding acquisition targets...');
+  
+  // Clear existing acquisition data first to prevent duplicates
+  await prisma.acquisitionScore.deleteMany();
+  await prisma.acquisitionTarget.deleteMany();
+
+  const properties = await prisma.property.findMany();
+
+  const targetsData = [
+    { name: "Sunset Plaza", property: pick(properties.filter(p => p.property_type === 'Retail')), deal_type: "Value-Add", narrative: "Aging but well-located retail strip with rents ~20% below market rate.", purchase_price: 4500000, sqft: 25000, occupancy: 0.75, noi: 270000, market_cap: 0.065, proforma_noi: 425000, renovation_budget: 750000, score: 88 },
+    { name: "Metro Business Tower", property: pick(properties.filter(p => p.property_type === 'Office')), deal_type: "Distressed", narrative: "Primary tenant went bankrupt, triggering co-tenancy clauses and high vacancy.", purchase_price: 8000000, sqft: 120000, occupancy: 0.35, noi: 300000, market_cap: 0.080, proforma_noi: 1200000, renovation_budget: 1500000, score: 92 },
+    { name: "Apex Logistics Center", property: pick(properties.filter(p => p.property_type === 'Industrial')), deal_type: "Stabilized", narrative: "Fully-leased warehouse with a national credit tenant on a long-term NNN lease.", purchase_price: 12000000, sqft: 150000, occupancy: 1.00, noi: 780000, market_cap: 0.065, proforma_noi: 810000, renovation_budget: 0, score: 76 },
+    // NOTE: For demo simplicity, we'll assign the multifamily and mixed-use to other property types for now
+    { name: "The Residences at Oakwood", property: pick(properties.filter(p => p.property_type === 'Office')), deal_type: "Growth Market", narrative: "Well-maintained complex in a rapidly growing tech hub with high rent growth potential.", purchase_price: 25000000, sqft: 140000, occupancy: 0.98, noi: 1250000, market_cap: 0.050, proforma_noi: 1325000, renovation_budget: 100000, score: 81 },
+    { name: "The Foundry Lofts", property: pick(properties.filter(p => p.property_type === 'Retail')), deal_type: "Repositioning", narrative: "Historic building with stable retail but vacant office space approved for residential conversion.", purchase_price: 6000000, sqft: 80000, occupancy: 0.25, noi: 150000, market_cap: 0.070, proforma_noi: 1300000, renovation_budget: 10000000, score: 95 }
+  ];
+
+  for (const targetData of targetsData) {
+    if (!targetData.property) {
+      console.warn(`   ⚠️ Could not find a suitable property for target "${targetData.name}", skipping.`);
+      continue;
+    }
+
+    const target = await prisma.acquisitionTarget.create({
+      data: {
+        property_id: targetData.property.id,
+        deal_type: targetData.deal_type,
+        narrative: targetData.narrative,
+        purchase_price: targetData.purchase_price,
+        square_footage: targetData.sqft,
+        current_occupancy: targetData.occupancy,
+        current_noi: targetData.noi,
+        market_cap_rate: targetData.market_cap,
+        proforma_noi: targetData.proforma_noi,
+        renovation_budget: targetData.renovation_budget
+      }
+    });
+
+    // Create a score record for the target
+    await prisma.acquisitionScore.create({
+      data: {
+        target_id: target.id,
+        financials: (targetData.score - rndInt(5, 10)) * 0.4,
+        value_add: (targetData.score + rndInt(3, 8)) * 0.3,
+        market_location: (targetData.score + rndInt(2, 6)) * 0.2,
+        property_characteristics: (targetData.score - rndInt(4, 8)) * 0.1,
+        composite_score: targetData.score
+      }
+    });
+    
+    console.log(`   🎯 Created acquisition target: ${targetData.name}`);
+  }
+
   console.log('\n🎉 Seeding complete — 6 months of payment history ready for trend charts');
 }
 
