@@ -61,6 +61,88 @@ app.get('/api/properties', async (req, res) => {
   }
 });
 
+// NOTE: /api/properties/performance MUST be registered before /api/properties/:id
+// or Express will match 'performance' as an :id param and return 404.
+app.get('/api/properties/performance', async (req, res) => {
+  try {
+    const { portfolio_id } = req.query;
+    if (!portfolio_id) return res.status(400).json({ error: 'portfolio_id is required' });
+
+    const properties = await prisma.property.findMany({
+      where: { portfolio_id },
+      include: {
+        tenants: {
+          include: {
+            leases: true,
+            payments: { orderBy: { time: 'desc' } }
+          }
+        }
+      },
+      orderBy: { name: 'asc' }
+    });
+
+    const result = properties.map(prop => {
+      const tenants = prop.tenants;
+      const occupiedUnits = tenants.filter(t => t.leases.length > 0).length;
+      const occupancyRate = prop.unit_count > 0 ? (occupiedUnits / prop.unit_count) * 100 : 0;
+
+      // Current month = from the 1st of this month
+      const cutoff = new Date();
+      cutoff.setDate(1); cutoff.setHours(0, 0, 0, 0);
+
+      let totalDue = 0, totalPaid = 0, problemCount = 0;
+      let totalDaysPastDue = 0, lateTenantCount = 0;
+
+      tenants.forEach(t => {
+        const lease = t.leases[0];
+        // Most recent payment regardless of month (seed data uses monthStart dates)
+        const currentPmt = t.payments[0];
+        if (lease) totalDue += lease.monthly_rent;
+        if (currentPmt) {
+          totalPaid += currentPmt.amount_paid;
+          if (currentPmt.days_past_due > 0) { totalDaysPastDue += currentPmt.days_past_due; lateTenantCount++; }
+          if (['partial', 'delinquent', 'defaulted'].includes(currentPmt.payment_status)) problemCount++;
+        }
+      });
+
+      // 6-month revenue sparkline
+      const monthlyRevenue = [];
+      for (let mo = 5; mo >= 0; mo--) {
+        const mStart = new Date(); mStart.setDate(1); mStart.setHours(0, 0, 0, 0); mStart.setMonth(mStart.getMonth() - mo - 1);
+        const mEnd   = new Date(); mEnd.setDate(1);   mEnd.setHours(0, 0, 0, 0);   mEnd.setMonth(mEnd.getMonth() - mo);
+        const pmts = tenants.flatMap(t => t.payments.filter(p => new Date(p.time) >= mStart && new Date(p.time) < mEnd));
+        monthlyRevenue.push(pmts.reduce((s, p) => s + p.amount_paid, 0));
+      }
+
+      const collectionRate  = totalDue > 0 ? (totalPaid / totalDue) * 100 : 100;
+      const revenuePerSqft  = prop.total_square_feet > 0 ? totalPaid / prop.total_square_feet : 0;
+      const estimatedNoi    = totalPaid * 0.65;
+
+      return {
+        id: prop.id, name: prop.name, property_type: prop.property_type,
+        city: prop.city, state: prop.state,
+        total_square_feet: prop.total_square_feet, unit_count: prop.unit_count,
+        occupied_units: occupiedUnits,
+        occupancy_rate: parseFloat(occupancyRate.toFixed(1)),
+        total_due: totalDue, total_paid: totalPaid,
+        collection_rate: parseFloat(collectionRate.toFixed(1)),
+        outstanding: Math.max(0, totalDue - totalPaid),
+        revenue_per_sqft: parseFloat(revenuePerSqft.toFixed(2)),
+        estimated_noi: parseFloat(estimatedNoi.toFixed(0)),
+        problem_tenants: problemCount,
+        avg_days_past_due: lateTenantCount > 0 ? parseFloat((totalDaysPastDue / lateTenantCount).toFixed(1)) : 0,
+        tenant_count: tenants.length,
+        monthly_revenue_trend: monthlyRevenue
+      };
+    });
+
+    res.json(result);
+  } catch (err) {
+    console.error('GET /api/properties/performance error:', err);
+    res.status(500).json({ error: 'Failed to fetch property performance' });
+  }
+});
+
 app.get('/api/properties/:id', async (req, res) => {
   try {
     const property = await prisma.property.findUnique({
@@ -162,87 +244,6 @@ app.get('/api/metrics', async (req, res) => {
   } catch (err) {
     console.error('GET /api/metrics error:', err);
     res.status(500).json({ error: 'Failed to fetch metrics' });
-  }
-});
-
-// ─── Property performance (per-property aggregated stats) ──────────────────
-app.get('/api/properties/performance', async (req, res) => {
-  try {
-    const { portfolio_id } = req.query;
-    if (!portfolio_id) return res.status(400).json({ error: 'portfolio_id is required' });
-
-    const properties = await prisma.property.findMany({
-      where: { portfolio_id },
-      include: {
-        tenants: {
-          include: {
-            leases: true,
-            payments: { orderBy: { time: 'desc' } }
-          }
-        }
-      },
-      orderBy: { name: 'asc' }
-    });
-
-    const result = properties.map(prop => {
-      const tenants = prop.tenants;
-      const occupiedUnits = tenants.filter(t => t.leases.length > 0).length;
-      const occupancyRate = prop.unit_count > 0 ? (occupiedUnits / prop.unit_count) * 100 : 0;
-
-      // Current month payments only
-      const cutoff = new Date();
-      cutoff.setDate(1); cutoff.setHours(0,0,0,0);
-      cutoff.setMonth(cutoff.getMonth() - 1);
-
-      let totalDue = 0, totalPaid = 0, problemCount = 0;
-      let totalDaysPastDue = 0, lateTenantCount = 0;
-
-      tenants.forEach(t => {
-        const currentPmt = t.payments.find(p => new Date(p.time) >= cutoff);
-        const lease = t.leases[0];
-        if (lease) totalDue += lease.monthly_rent;
-        if (currentPmt) {
-          totalPaid += currentPmt.amount_paid;
-          if (currentPmt.days_past_due > 0) { totalDaysPastDue += currentPmt.days_past_due; lateTenantCount++; }
-          if (['partial','delinquent','defaulted'].includes(currentPmt.payment_status)) problemCount++;
-        }
-      });
-
-      // 6-month revenue trend from all payments
-      const monthlyRevenue = [];
-      for (let mo = 5; mo >= 0; mo--) {
-        const mStart = new Date(); mStart.setDate(1); mStart.setHours(0,0,0,0); mStart.setMonth(mStart.getMonth() - mo - 1);
-        const mEnd   = new Date(); mEnd.setDate(1);   mEnd.setHours(0,0,0,0);   mEnd.setMonth(mEnd.getMonth() - mo);
-        const pmts = tenants.flatMap(t => t.payments.filter(p => new Date(p.time) >= mStart && new Date(p.time) < mEnd));
-        monthlyRevenue.push(pmts.reduce((s, p) => s + p.amount_paid, 0));
-      }
-
-      const collectionRate = totalDue > 0 ? (totalPaid / totalDue) * 100 : 100;
-      const revenuePerSqft = prop.total_square_feet > 0 ? totalPaid / prop.total_square_feet : 0;
-      const noi = totalPaid * 0.65; // estimated 65% NOI margin
-
-      return {
-        id: prop.id, name: prop.name, property_type: prop.property_type,
-        city: prop.city, state: prop.state,
-        total_square_feet: prop.total_square_feet, unit_count: prop.unit_count,
-        occupied_units: occupiedUnits,
-        occupancy_rate: parseFloat(occupancyRate.toFixed(1)),
-        total_due: totalDue, total_paid: totalPaid,
-        collection_rate: parseFloat(collectionRate.toFixed(1)),
-        outstanding: Math.max(0, totalDue - totalPaid),
-        revenue_per_sqft: parseFloat(revenuePerSqft.toFixed(2)),
-        estimated_noi: parseFloat(noi.toFixed(0)),
-        problem_tenants: problemCount,
-        avg_days_past_due: lateTenantCount > 0 ? parseFloat((totalDaysPastDue / lateTenantCount).toFixed(1)) : 0,
-        tenant_count: tenants.length,
-        monthly_revenue_trend: monthlyRevenue
-      };
-    });
-
-    res.json(result);
-  } catch (err) {
-    console.error('GET /api/properties/performance error:', err);
-    res.status(500).json({ error: 'Failed to fetch property performance' });
   }
 });
 
