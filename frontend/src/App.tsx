@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, City, Target } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, Target } from 'lucide-react';
 import { useRealSightStore } from './store/useRealSightStore';
 import { PortfolioPropertySelector } from './components/PortfolioPropertySelector';
 import { TenantFinancialsTable } from './components/TenantFinancialsTable';
@@ -59,7 +59,7 @@ function App() {
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <City className="w-4 h-4" /> Portfolio Performance
+              <Building2 className="w-4 h-4" /> Portfolio Performance
             </button>
             <button
               onClick={() => setActiveTab('acquisition')}
