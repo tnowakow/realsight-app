@@ -1,20 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useRealSightStore } from '../../store/useRealSightStore';
 import { AlertCard } from '../ui/AlertCard';
-import { Tooltip } from '../ui/Tooltip';
-import { Info } from 'lucide-react';
+// Intentionally removing Tooltip and Info to simplify
+// import { Tooltip } from '../ui/Tooltip';
+// import { Info } from 'lucide-react';
 
-// Helper component to prevent repetition
-const KPICard = ({ label, value, unit, target, isGood, tooltipText }: any) => (
+// Reverted to a known-good, simple version of the KPI Card
+const KPICard = ({ label, value, unit, target, isGood }: any) => (
   <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-800">
-    <div className="flex items-center justify-between text-xs text-slate-500 uppercase tracking-wider mb-1">
-      <span>{label}</span>
-      {tooltipText && (
-        <Tooltip text={tooltipText}>
-          <Info className="w-3 h-3 cursor-pointer" />
-        </Tooltip>
-      )}
-    </div>
+    <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">{label}</div>
     <div className="flex items-baseline gap-1">
       <span className="text-xl font-bold text-white">{value}</span>
       {unit && <span className="text-sm text-slate-400">{unit}</span>}
@@ -23,7 +17,7 @@ const KPICard = ({ label, value, unit, target, isGood, tooltipText }: any) => (
   </div>
 );
 
-// Main component
+// Main component, simplified
 export const OverviewTab = () => {
   const { selectedPortfolioId, selectedPropertyId, properties, tenants } = useRealSightStore();
   const [isLoading, setIsLoading] = useState(true);
@@ -32,21 +26,18 @@ export const OverviewTab = () => {
   useEffect(() => {
     setIsLoading(true);
     if (selectedPortfolioId) {
-      // Logic to calculate metrics
+      // Metrics calculation logic remains the same
       const relevantProperties = selectedPropertyId ? properties.filter(p => p.id === selectedPropertyId) : properties;
       if (relevantProperties.length === 0 && tenants.length === 0) {
         setMetrics(null);
         setIsLoading(false);
         return;
       }
-
       const totalUnits = relevantProperties.reduce((sum, p) => sum + (p.unit_count || 0), 0);
       const occupiedUnits = tenants.filter(t => t.lease).length;
       const occupancyRate = totalUnits > 0 ? (occupiedUnits / totalUnits) * 100 : 0;
-
       let totalRentDue = 0, totalPaid = 0, lateDaysPastDueSum = 0, lateTenantCount = 0;
       const problemTenants: any[] = [];
-
       tenants.forEach(tenant => {
         if (tenant.lease) totalRentDue += tenant.lease.monthly_rent || 0;
         if (tenant.currentPayment) {
@@ -62,12 +53,10 @@ export const OverviewTab = () => {
           }
         }
       });
-
       const collectionRate = totalRentDue > 0 ? (totalPaid / totalRentDue) * 100 : 100;
       const outstandingDebt = Math.max(0, totalRentDue - totalPaid);
       const avgDaysPastDue = lateTenantCount > 0 ? Math.round(lateDaysPastDueSum / lateTenantCount) : 0;
       const noiMargin = totalPaid > 0 ? (((totalPaid - totalPaid * 0.35) / totalPaid) * 100) : 0;
-
       let healthScore = 100 - (100 - collectionRate) * 1.5 - avgDaysPastDue * 0.5 - problemTenants.length * 5 - (100 - occupancyRate);
       
       setMetrics({
@@ -93,28 +82,18 @@ export const OverviewTab = () => {
   };
   const healthVerdict = getHealthVerdict(Number(metrics.healthScore));
 
-  const tooltips = {
-    collectionRate: <span><strong>Rent Collection Rate:</strong> % of total rent due that was collected.</span>,
-    occupancy: <span><strong>Portfolio Occupancy:</strong> % of rentable units with an active lease.</span>,
-    outstanding: <span><strong>Total Outstanding:</strong> Total unpaid rent.</span>,
-    daysPastDue: <span><strong>Avg. Days Past Due:</strong> Average for late tenants only.</span>,
-    monthlyRevenue: <span><strong>Monthly Revenue:</strong> Gross potential income for the month.</span>,
-    problemTenants: <span><strong>Problem Tenants:</strong> Count of tenants who are >15 days late or have a problem status.</span>,
-    activeAlerts: <span><strong>Active Alerts:</strong> Count of tenants with 'critical' or 'high' severity status.</span>,
-    noiMargin: <span><strong>NOI Margin (Est.):</strong> Estimated Net Operating Income margin (assumes 35% OpEx).</span>,
-  };
-
+  // Reverted to pre-tooltip state. No tooltips.
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KPICard label="Rent Collection Rate" value={metrics.collectionRate} unit="%" target="&ge;95%" isGood={metrics.collectionRate >= 95} tooltipText={tooltips.collectionRate} />
-        <KPICard label="Portfolio Occupancy" value={metrics.occupancyRate} unit="%" target="&ge;90%" isGood={metrics.occupancyRate >= 90} tooltipText={tooltips.occupancy} />
-        <KPICard label="Total Outstanding" value={formatCurrency(metrics.outstandingDebt)} target={'&lt; $15K'} isGood={metrics.outstandingDebt <= 15000} tooltipText={tooltips.outstanding} />
-        <KPICard label="Avg Days Past Due" value={metrics.avgDaysPastDue} unit="days" target={'&lt; 10 days'} isGood={metrics.avgDaysPastDue <= 10} tooltipText={tooltips.daysPastDue} />
-        <KPICard label="Monthly Revenue" value={formatCurrency(metrics.totalRentDue)} tooltipText={tooltips.monthlyRevenue} />
-        <KPICard label="Problem Tenants" value={metrics.problemTenantsCount} target="&le;2" isGood={metrics.problemTenantsCount <= 2} tooltipText={tooltips.problemTenants} />
-        <KPICard label="Active Alerts" value={metrics.alertsActive} target="0" isGood={metrics.alertsActive === 0} tooltipText={tooltips.activeAlerts} />
-        <KPICard label="NOI Margin" value={metrics.noiMargin} unit="%" target="&ge;25%" isGood={metrics.noiMargin >= 25} tooltipText={tooltips.noiMargin} />
+        <KPICard label="Rent Collection Rate" value={metrics.collectionRate} unit="%" target=">95%" isGood={metrics.collectionRate >= 95} />
+        <KPICard label="Portfolio Occupancy" value={metrics.occupancyRate} unit="%" target=">90%" isGood={metrics.occupancyRate >= 90} />
+        <KPICard label="Total Outstanding" value={formatCurrency(metrics.outstandingDebt)} target="< $15K" isGood={metrics.outstandingDebt <= 15000} />
+        <KPICard label="Avg Days Past Due" value={metrics.avgDaysPastDue} unit="days" target="< 10 days" isGood={metrics.avgDaysPastDue <= 10} />
+        <KPICard label="Monthly Revenue" value={formatCurrency(metrics.totalRentDue)} />
+        <KPICard label="Problem Tenants" value={metrics.problemTenantsCount} target="< 2" isGood={metrics.problemTenantsCount <= 2} />
+        <KPICard label="Active Alerts" value={metrics.alertsActive} target="0" isGood={metrics.alertsActive === 0} />
+        <KPICard label="NOI Margin" value={metrics.noiMargin} unit="%" target=">25%" isGood={metrics.noiMargin >= 25} />
       </section>
 
       {metrics.problemTenants.length > 0 && (
@@ -129,9 +108,9 @@ export const OverviewTab = () => {
       <section className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-800 text-center"><div className="text-2xl font-bold text-white">{metrics.propertyCount}</div><div className="text-xs text-slate-500 uppercase tracking-wider mt-1">Total Properties</div></div>
         <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-800 text-center"><div className="text-2xl font-bold text-white">{metrics.tenantCount}</div><div className="text-xs text-slate-500 uppercase tracking-wider mt-1">Active Tenants</div></div>
-        <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-800 text-center"><div className="flex items-center justify-center gap-2"><div className="text-xl font-bold text-emerald-400">{formatCurrency(metrics.totalRentDue)}</div><Tooltip text={tooltips.monthlyRevenue}><Info className="w-3 h-3" /></Tooltip></div><div className="text-xs text-slate-500 uppercase tracking-wider mt-1">Monthly Revenue</div></div>
-        <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-800 text-center"><div className="flex items-center justify-center gap-2"><div className="text-2xl font-bold text-white">{metrics.occupancyRate}%</div><Tooltip text={tooltips.occupancy}><Info className="w-3 h-3" /></Tooltip></div><div className="text-xs text-slate-500 uppercase tracking-wider mt-1">Avg Occupancy</div></div>
-        <div className={`rounded-lg p-4 border text-center ${healthVerdict.bg}`}><div className="flex items-center justify-center gap-2"><div className={`text-2xl font-bold ${healthVerdict.color}`}>{metrics.alertsActive}</div><Tooltip text={tooltips.activeAlerts}><Info className="w-3 h-3" /></Tooltip></div><div className="text-xs text-slate-500 uppercase tracking-wider mt-1">Alerts Active</div></div>
+        <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-800 text-center"><div className="flex items-center justify-center gap-2"><div className="text-xl font-bold text-emerald-400">{formatCurrency(metrics.totalRentDue)}</div></div><div className="text-xs text-slate-500 uppercase tracking-wider mt-1">Monthly Revenue</div></div>
+        <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-800 text-center"><div className="flex items-center justify-center gap-2"><div className="text-2xl font-bold text-white">{metrics.occupancyRate}%</div></div><div className="text-xs text-slate-500 uppercase tracking-wider mt-1">Avg Occupancy</div></div>
+        <div className={`rounded-lg p-4 border text-center ${healthVerdict.bg}`}><div className="flex items-center justify-center gap-2"><div className={`text-2xl font-bold ${healthVerdict.color}`}>{metrics.alertsActive}</div></div><div className="text-xs text-slate-500 uppercase tracking-wider mt-1">Alerts Active</div></div>
       </section>
 
       <section className={`bg-gradient-to-r ${healthVerdict.bg} rounded-xl p-8 border ${healthVerdict.color.replace('text', 'border')}/30`}>
