@@ -1,30 +1,39 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <defs>
-    <linearGradient id="toothGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#10b981;stop-opacity:1" />
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="buildingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#34d399;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#10b981;stop-opacity:1"/>
     </linearGradient>
   </defs>
-  <!-- Tooth shape -->
-  <path d="M16 2
-    C12 2 9 4 8 7
-    C7 9 7 11 8 13
-    C9 15 9 17 8.5 20
-    C8 23 8 26 9.5 28
-    C10.5 29.5 12 29 13 27
-    C14 25 14.5 22 16 22
-    C17.5 22 18 25 19 27
-    C20 29 21.5 29.5 22.5 28
-    C24 26 24 23 23.5 20
-    C23 17 23 15 24 13
-    C25 11 25 9 24 7
-    C23 4 20 2 16 2Z"
-    fill="url(#toothGrad)"
-    stroke="none"
-  />
-  <!-- Shine highlight -->
-  <path d="M12 5 C11 6.5 10.5 8.5 11 10 C11.5 11 12.5 11 13 10 C13.5 9 13 7 12 5Z"
-    fill="white"
-    opacity="0.3"
-  />
+  
+  <!-- Sky background -->
+  <rect width="32" height="32" rx="6" fill="url(#skyGrad)"/>
+  
+  <!-- Back buildings (darker, smaller) -->
+  <rect x="4" y="18" width="5" height="10" rx="1" fill="#1e293b" opacity="0.7"/>
+  <rect x="23" y="16" width="5" height="12" rx="1" fill="#1e293b" opacity="0.7"/>
+  
+  <!-- Middle buildings -->
+  <rect x="8" y="14" width="6" height="14" rx="1" fill="#334155"/>
+  <rect x="18" y="12" width="7" height="16" rx="1" fill="#334155"/>
+  
+  <!-- Main building (tallest, emerald) -->
+  <rect x="12" y="8" width="8" height="20" rx="1.5" fill="url(#buildingGrad)"/>
+  
+  <!-- Windows on main building -->
+  <g fill="#a7f3d0" opacity="0.6">
+    <rect x="14" y="10" width="1.5" height="2" rx="0.3"/>
+    <rect x="18" y="10" width="1.5" height="2" rx="0.3"/>
+    <rect x="14" y="14" width="1.5" height="2" rx="0.3"/>
+    <rect x="18" y="14" width="1.5" height="2" rx="0.3"/>
+    <rect x="14" y="18" width="1.5" height="2" rx="0.3"/>
+    <rect x="18" y="18" width="1.5" height="2" rx="0.3"/>
+  </g>
+  
+  <!-- Ground line -->
+  <rect x="4" y="26" width="24" height="2" rx="1" fill="#0f172a"/>
 </svg>
