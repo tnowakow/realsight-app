@@ -182,7 +182,7 @@ const PropertyTenantDetail = ({ tenants, propertyId }: { tenants: Tenant[]; prop
                                 strokeWidth="1.5"
                                 strokeLinejoin="round"
                                 strokeLinecap="round"
-                                points={t.monthlyRevenue.map((v, i) => {
+                                points={t.monthlyRevenue.map((v: number, i: number) => {
                                   const x = (i / 5) * 60 + 2;
                                   const y = 22 - ((v - min) / range) * 20;
                                   return `${x},${y}`;
