@@ -13,14 +13,41 @@ const getPipeline = async (req, res) => {
   try {
     const acquisitions = await prisma.acquisitionTarget.findMany({
       include: {
-        scores: true
+        scores: true,
+        property: {
+          select: {
+            name: true,
+            city: true,
+            state: true,
+          }
+        }
       },
       orderBy: {
-        compositeScore: 'desc'
+        scores: {
+          _count: 'desc' // Placeholder sort, should be by composite_score
+        }
       }
     });
+
+    // TODO: The sorting is not quite right. We need to sort by the actual composite_score
+    // on the related AcquisitionScore model. This is a more complex query.
+    // For now, this gets the API working. A better approach might be a raw query
+    // or restructuring the data. Let's get it functional first.
     
-    res.json(acquisitions);
+    // Manually attach property details to the top level for easier frontend access
+    const result = acquisitions.map(acq => ({
+      ...acq,
+      property_name: acq.property.name,
+      address: `${acq.property.city}, ${acq.property.state}`,
+      market: acq.property.city,
+      // Use the first score's composite score for sorting and display
+      acquisition_score: acq.scores[0]?.composite_score || 0,
+    }));
+    
+    // Now sort in application code
+    result.sort((a, b) => b.acquisition_score - a.acquisition_score);
+
+    res.json(result);
   } catch (err) {
     console.error('GET /api/acquisitions/pipeline error:', err);
     res.status(500).json({ error: 'Failed to fetch acquisition pipeline' });
